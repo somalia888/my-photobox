@@ -240,7 +240,7 @@
                 frames.push({ id: 'f'+Date.now(), name: file.name, data: e.target.result });
                 localStorage.setItem('custom_frames', JSON.stringify(frames));
                 renderAdmin(); 
-                loadUserFrames(); // Pastikan list di user terupdate
+                loadUserFrames(); 
             };
             reader.readAsDataURL(file);
         }
@@ -250,7 +250,7 @@
             f.splice(i, 1);
             localStorage.setItem('custom_frames', JSON.stringify(f));
             renderAdmin(); 
-            loadUserFrames(); // Pastikan list di user terupdate
+            loadUserFrames(); 
         }
 
         async function resetAllData() { 
@@ -265,7 +265,7 @@
             const { data: v } = await _supabase.from('vouchers').select('*').eq('code', input).eq('used', false).single();
             if (v) { 
                 activeVoucher = input; 
-                loadUserFrames(); // Muat frame saat voucher valid
+                loadUserFrames(); 
                 switchScreen('screen-camera'); 
                 startCamera(); 
             }
@@ -273,7 +273,6 @@
         }
 
         function startCamera() {
-            // Pengaturan kamera lebih stabil untuk Handphone
             const constraints = {
                 video: {
                     width: { ideal: 1920 },
@@ -288,33 +287,32 @@
                 videoEl.play();
             })
             .catch(err => {
-                alert("Gagal akses kamera. Pastikan izin kamera diberikan.");
+                alert("Gagal akses kamera.");
             });
         }
 
-        // PERBAIKAN UTAMA: Fungsi loadUserFrames dipanggil secara eksplisit
         function loadUserFrames() {
             const container = document.getElementById('user-frame-list');
             if(!container) return;
-
-            // Bersihkan container dulu
+            
+            // Simpan referensi ke frame yang aktif
+            const activeId = currentFrame;
+            
             container.innerHTML = '';
             
-            // Tambahkan tombol Polos (Default)
+            // Tombol Polos
             const btnDefault = document.createElement('button');
-            btnDefault.id = "default-frame-btn";
             btnDefault.innerText = "Polos";
-            btnDefault.className = currentFrame === 'default' ? 'active-opt' : '';
+            if (activeId === 'default') btnDefault.classList.add('active-opt');
             btnDefault.onclick = () => setFrame('default', btnDefault);
             container.appendChild(btnDefault);
 
-            // Tambahkan tombol dari LocalStorage
+            // Muat frame dari storage
             const custom = JSON.parse(localStorage.getItem('custom_frames') || '[]');
             custom.forEach(f => {
                 const btn = document.createElement('button');
-                // Ambil 6 karakter nama file agar rapi di layar HP
                 btn.innerText = (f.name || "Frame").split('.')[0].substring(0,6);
-                btn.className = currentFrame === f.id ? 'active-opt' : '';
+                if (activeId === f.id) btn.classList.add('active-opt');
                 btn.onclick = () => setFrame(f.id, btn);
                 container.appendChild(btn);
             });
@@ -345,8 +343,6 @@
                     await new Promise(r => setTimeout(r, 1000));
                     count--;
                 }
-                cd.innerText = "SMILE! 📸";
-                await new Promise(r => setTimeout(r, 500));
                 cd.classList.add('hidden');
                 takeSnap();
                 await new Promise(r => setTimeout(r, 1000));
@@ -450,7 +446,7 @@
         }
 
         // Jalankan saat halaman siap
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('load', () => {
             loadUserFrames();
         });
     </script>
