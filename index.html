@@ -338,7 +338,7 @@
             createStrip();
         }
 
-        // --- LOGIKA ANTI GEPENG + PERBAIKAN FILTER ---
+        // --- PERBAIKAN STABILITAS FILTER UNTUK LAPTOP & HP ---
         function takeSnap() {
             const video = document.getElementById('video');
             const canvas = document.createElement('canvas');
@@ -351,18 +351,21 @@
             canvas.height = targetHeight;
             const ctx = canvas.getContext('2d');
             
+            // 1. Membersihkan canvas & menerapkan filter secara eksplisit (Fix Laptop)
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.filter = currentFilter;
+
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
-
-            // Terapkan filter ke kanvas (Agar permanen saat diunduh)
-            ctx.filter = currentFilter;
 
             playSound('cekrek');
             document.getElementById('flash').style.opacity = '1';
             setTimeout(() => document.getElementById('flash').style.opacity = '0', 100);
 
-            // Mirroring
-            ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
+            // 2. Simpan State & Mirroring
+            ctx.save();
+            ctx.translate(canvas.width, 0); 
+            ctx.scale(-1, 1);
             
             // Logika Crop Center
             const sourceWidth = video.videoWidth;
@@ -382,7 +385,12 @@
                 sy = (sourceHeight - sHeight) / 2;
             }
 
+            // 3. Gambar video ke canvas
             ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
+            
+            // 4. Restore state canvas (Fix filter bertumpuk)
+            ctx.restore();
+
             photos.push(canvas.toDataURL('image/jpeg', 1.0));
         }
 
