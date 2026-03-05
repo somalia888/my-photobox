@@ -3,74 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Photobox Pro - Final Edition</title>
+    <title>Photobox Pro - Cloud Sync</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #6c5ce7; --danger: #ff7675; --dark: #2d3436; --light: #f9f9f9; }
-        
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background: #dfe6e9; 
-            margin: 0; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh;
-        }
-
-        .container { 
-            background: white; 
-            padding: 25px; 
-            border-radius: 20px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
-            width: 95vw; 
-            max-width: 900px; 
-            position: relative; 
-            box-sizing: border-box;
-        }
-
+        body { font-family: 'Segoe UI', sans-serif; background: #dfe6e9; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 95vw; max-width: 900px; position: relative; box-sizing: border-box; }
         .hidden { display: none !important; }
         .nav-admin { position: absolute; top: 15px; right: 15px; font-size: 12px; cursor: pointer; color: #aaa; z-index: 100; }
-
-        /* LAYOUT RESPONSIF */
         .camera-layout { display: flex; gap: 20px; flex-direction: row; }
         @media (max-width: 768px) { .camera-layout { flex-direction: column; } }
-
-        .camera-container { 
-            flex: 2;
-            position: relative; 
-            border-radius: 15px; 
-            overflow: hidden; 
-            background: #000; 
-            aspect-ratio: 4/3;
-        }
-
-        video { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            transform: scaleX(-1); 
-        }
-
+        .camera-container { flex: 2; position: relative; border-radius: 15px; overflow: hidden; background: #000; aspect-ratio: 4/3; }
+        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         #countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 6rem; color: white; font-weight: bold; z-index: 10; }
         #flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 20; opacity: 0; pointer-events: none; }
-        
         .sidebar-controls { flex: 1; display: flex; flex-direction: column; gap: 10px; }
-
         button { padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; transition: 0.2s; background: #eee; }
         .main-btn { background: var(--primary); color: white; width: 100%; font-size: 16px; }
         .danger { background: var(--danger); color: white; }
         input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; text-align: center; }
-        
         .filter-group, .frame-group { display: flex; flex-wrap: wrap; gap: 5px; margin: 5px 0; }
         .active-opt { border: 2px solid var(--primary) !important; background: #e8e7ff; }
-        
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .card { background: var(--dark); color: white; padding: 10px; border-radius: 10px; font-size: 12px; }
         .scroll-table { max-height: 200px; overflow-y: auto; border: 1px solid #eee; margin-top: 10px;}
         table { width: 100%; font-size: 11px; border-collapse: collapse; }
         th, td { padding: 6px; border-bottom: 1px solid #eee; text-align: center; }
-
         canvas { width: 100%; max-width: 300px; display: block; margin: 10px auto; border-radius: 10px; border: 1px solid #ddd; }
     </style>
 </head>
@@ -94,7 +52,6 @@
                     <div id="countdown" class="hidden">3</div>
                     <div id="flash"></div>
                 </div>
-
                 <div class="sidebar-controls">
                     <div style="font-size:12px; font-weight: bold;">Filter:</div>
                     <div class="filter-group">
@@ -102,11 +59,8 @@
                         <button onclick="setFilter('grayscale(100%)', this)">B&W</button>
                         <button onclick="setFilter('sepia(100%)', this)">Sepia</button>
                     </div>
-                    
-                    <div style="font-size:12px; font-weight: bold;">Frame:</div>
-                    <div id="user-frame-list" class="frame-group">
-                        </div>
-
+                    <div style="font-size:12px; font-weight: bold;">Frame (Cloud):</div>
+                    <div id="user-frame-list" class="frame-group">Memuat frame...</div>
                     <button id="start-btn" class="main-btn" onclick="startSequence()">AMBIL FOTO (4x)</button>
                 </div>
             </div>
@@ -135,13 +89,14 @@
                 <div class="card">Income: Rp <span id="stat-income">0</span></div>
             </div>
             <hr>
+            <p style="font-size: 11px; margin: 0;">Upload Frame ke Cloud (PNG):</p>
             <input type="file" id="frame-upload" accept="image/png" style="font-size:10px">
-            <button onclick="uploadFrame()" style="width:100%; margin-bottom: 10px;">Upload Frame</button>
+            <button id="upload-btn" onclick="uploadFrame()" style="width:100%; margin-bottom: 10px;">Upload ke Cloud</button>
             <div id="admin-frame-list" style="display:flex; gap:5px; overflow-x:auto; padding-bottom:10px;"></div>
             <hr>
             <div style="display:flex; gap:5px">
                 <input type="number" id="gen-qty" value="5" style="width:60px; margin:0">
-                <button onclick="generateVouchers()" style="flex:1">Generate</button>
+                <button onclick="generateVouchers()" style="flex:1">Generate Voucher</button>
             </div>
             <div class="scroll-table">
                 <table id="voucher-table">
@@ -149,7 +104,7 @@
                     <tbody></tbody>
                 </table>
             </div>
-            <button class="danger" onclick="resetAllData()" style="width:100%; margin-top:10px">RESET DATA</button>
+            <button class="danger" onclick="resetAllData()" style="width:100%; margin-top:10px">RESET SEMUA DATA</button>
             <button onclick="hideAdmin()" style="width:100%; margin-top:10px">Keluar</button>
         </section>
     </div>
@@ -163,6 +118,7 @@
         const HARGA_PER_SESI = 15000;
 
         let photos = [];
+        let cloudFrames = [];
         let currentFilter = 'none';
         let currentFrame = 'default';
         let activeVoucher = null;
@@ -192,18 +148,111 @@
             }
         }
 
-        function showAdminLogin() { switchScreen('screen-admin-login'); }
-        function hideAdmin() { switchScreen('screen-voucher'); }
         function switchScreen(id) {
             document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
         }
-
+        function showAdminLogin() { switchScreen('screen-admin-login'); }
+        function hideAdmin() { switchScreen('screen-voucher'); }
         function loginAdmin() {
             if(document.getElementById('admin-pin').value === ADMIN_PIN) {
                 switchScreen('screen-admin-panel');
                 renderAdmin();
             } else { alert("PIN Salah!"); }
+        }
+
+        // --- CLOUD FRAME LOGIC ---
+
+        async function uploadFrame() {
+            const file = document.getElementById('frame-upload').files[0];
+            const btn = document.getElementById('upload-btn');
+            if(!file) return alert("Pilih file PNG!");
+            
+            btn.disabled = true;
+            btn.innerText = "Mengunggah...";
+
+            const fileName = `frame_${Date.now()}.png`;
+            
+            // 1. Upload ke Storage
+            const { data: storageData, error: storageError } = await _supabase.storage
+                .from('frames-bucket')
+                .upload(fileName, file);
+
+            if (storageError) {
+                alert("Error Upload: " + storageError.message);
+                btn.disabled = false;
+                return;
+            }
+
+            // 2. Ambil Public URL
+            const { data: { publicUrl } } = _supabase.storage.from('frames-bucket').getPublicUrl(fileName);
+
+            // 3. Simpan ke Database
+            await _supabase.from('frames').insert([{ name: file.name, url: publicUrl }]);
+
+            btn.disabled = false;
+            btn.innerText = "Upload ke Cloud";
+            renderAdmin();
+        }
+
+        async function fetchFrames() {
+            const { data } = await _supabase.from('frames').select('*').order('id', { ascending: false });
+            cloudFrames = data || [];
+            loadUserFrames();
+        }
+
+        async function deleteFrame(id, url) {
+            if(!confirm("Hapus frame ini?")) return;
+            const fileName = url.split('/').pop();
+            await _supabase.storage.from('frames-bucket').remove([fileName]);
+            await _supabase.from('frames').delete().eq('id', id);
+            renderAdmin();
+        }
+
+        function loadUserFrames() {
+            const container = document.getElementById('user-frame-list');
+            if(!container) return;
+            container.innerHTML = '';
+            
+            // Polos
+            const btnDefault = document.createElement('button');
+            btnDefault.innerText = "Polos";
+            btnDefault.className = currentFrame === 'default' ? 'active-opt' : '';
+            btnDefault.onclick = () => setFrame('default', btnDefault);
+            container.appendChild(btnDefault);
+
+            // Cloud Frames
+            cloudFrames.forEach(f => {
+                const btn = document.createElement('button');
+                btn.innerText = f.name.split('.')[0].substring(0,6);
+                btn.className = currentFrame === f.url ? 'active-opt' : '';
+                btn.onclick = () => setFrame(f.url, btn);
+                container.appendChild(btn);
+            });
+        }
+
+        // --- VOUCHER & ADMIN ---
+
+        async function renderAdmin() {
+            // Stats
+            const { data: db } = await _supabase.from('vouchers').select('*').order('created_at', { ascending: false });
+            if(db) {
+                const usedCount = db.filter(v => v.used).length;
+                document.getElementById('stat-total').innerText = db.length;
+                document.getElementById('stat-used').innerText = usedCount;
+                document.getElementById('stat-sessions').innerText = usedCount;
+                document.getElementById('stat-income').innerText = (usedCount * HARGA_PER_SESI).toLocaleString('id-ID');
+                document.querySelector('#voucher-table tbody').innerHTML = db.map(v => `<tr><td>${v.code}</td><td>${v.used?'✅':'⏳'}</td><td>${v.used_at}</td></tr>`).join('');
+            }
+            
+            // Frames
+            const { data: frames } = await _supabase.from('frames').select('*');
+            document.getElementById('admin-frame-list').innerHTML = (frames || []).map(f => `
+                <div style="text-align:center; min-width:60px;">
+                    <img src="${f.url}" style="height:60px; border:1px solid #ddd; border-radius:5px;"><br>
+                    <button class="danger" onclick="deleteFrame(${f.id}, '${f.url}')" style="padding:2px 5px; font-size:9px;">Hapus</button>
+                </div>
+            `).join('');
         }
 
         async function generateVouchers() {
@@ -217,46 +266,16 @@
             renderAdmin();
         }
 
-        async function renderAdmin() {
-            const { data: db } = await _supabase.from('vouchers').select('*').order('created_at', { ascending: false });
-            if(!db) return;
-            const usedCount = db.filter(v => v.used).length;
-            const frames = JSON.parse(localStorage.getItem('custom_frames') || '[]');
-            document.getElementById('stat-total').innerText = db.length;
-            document.getElementById('stat-used').innerText = usedCount;
-            document.getElementById('stat-sessions').innerText = usedCount;
-            document.getElementById('stat-income').innerText = (usedCount * HARGA_PER_SESI).toLocaleString('id-ID');
-            const tbody = document.querySelector('#voucher-table tbody');
-            tbody.innerHTML = db.map(v => `<tr><td>${v.code}</td><td>${v.used?'✅':'⏳'}</td><td>${v.used_at}</td></tr>`).join('');
-            document.getElementById('admin-frame-list').innerHTML = frames.map((f, i) => `<div style="text-align:center; min-width:60px;"><img src="${f.data}" style="height:60px; border:1px solid #ddd;"><br><button class="danger" onclick="deleteFrame(${i})" style="padding:2px 5px; font-size:9px;">Hapus</button></div>`).join('');
-        }
-
-        function uploadFrame() {
-            const file = document.getElementById('frame-upload').files[0];
-            if(!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                let frames = JSON.parse(localStorage.getItem('custom_frames') || '[]');
-                frames.push({ id: 'f'+Date.now(), name: file.name, data: e.target.result });
-                localStorage.setItem('custom_frames', JSON.stringify(frames));
-                renderAdmin(); 
-                loadUserFrames(); 
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function deleteFrame(i) {
-            let f = JSON.parse(localStorage.getItem('custom_frames') || '[]');
-            f.splice(i, 1);
-            localStorage.setItem('custom_frames', JSON.stringify(f));
-            renderAdmin(); 
-            loadUserFrames(); 
-        }
-
         async function resetAllData() { 
-            if(confirm("Hapus semua data di Cloud?")) { 
+            if(confirm("PERINGATAN: Ini akan menghapus SEMUA voucher dan frame di Cloud!")) { 
                 await _supabase.from('vouchers').delete().neq('code', ''); 
-                localStorage.clear(); location.reload(); 
+                const { data } = await _supabase.from('frames').select('*');
+                if(data.length > 0) {
+                    const files = data.map(f => f.url.split('/').pop());
+                    await _supabase.storage.from('frames-bucket').remove(files);
+                    await _supabase.from('frames').delete().neq('name', '');
+                }
+                location.reload(); 
             } 
         }
 
@@ -265,57 +284,20 @@
             const { data: v } = await _supabase.from('vouchers').select('*').eq('code', input).eq('used', false).single();
             if (v) { 
                 activeVoucher = input; 
-                loadUserFrames(); 
+                await fetchFrames(); // Ambil frame terbaru dari cloud
                 switchScreen('screen-camera'); 
                 startCamera(); 
+            } else { 
+                document.getElementById('voucher-msg').innerText = "Voucher tidak valid atau sudah terpakai!"; 
             }
-            else { document.getElementById('voucher-msg').innerText = "Voucher tidak valid!"; }
         }
+
+        // --- CAMERA & LOGIC ---
 
         function startCamera() {
-            const constraints = {
-                video: {
-                    width: { ideal: 1920 },
-                    height: { ideal: 1080 },
-                    facingMode: "user"
-                }
-            };
-            navigator.mediaDevices.getUserMedia(constraints)
-            .then(s => {
-                const videoEl = document.getElementById('video');
-                videoEl.srcObject = s;
-                videoEl.play();
-            })
-            .catch(err => {
-                alert("Gagal akses kamera.");
-            });
-        }
-
-        function loadUserFrames() {
-            const container = document.getElementById('user-frame-list');
-            if(!container) return;
-            
-            // Simpan referensi ke frame yang aktif
-            const activeId = currentFrame;
-            
-            container.innerHTML = '';
-            
-            // Tombol Polos
-            const btnDefault = document.createElement('button');
-            btnDefault.innerText = "Polos";
-            if (activeId === 'default') btnDefault.classList.add('active-opt');
-            btnDefault.onclick = () => setFrame('default', btnDefault);
-            container.appendChild(btnDefault);
-
-            // Muat frame dari storage
-            const custom = JSON.parse(localStorage.getItem('custom_frames') || '[]');
-            custom.forEach(f => {
-                const btn = document.createElement('button');
-                btn.innerText = (f.name || "Frame").split('.')[0].substring(0,6);
-                if (activeId === f.id) btn.classList.add('active-opt');
-                btn.onclick = () => setFrame(f.id, btn);
-                container.appendChild(btn);
-            });
+            navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080, facingMode: "user" } })
+            .then(s => { document.getElementById('video').srcObject = s; })
+            .catch(() => alert("Kamera tidak terdeteksi!"));
         }
 
         function setFilter(f, btn) {
@@ -345,7 +327,7 @@
                 }
                 cd.classList.add('hidden');
                 takeSnap();
-                await new Promise(r => setTimeout(r, 1000));
+                await new Promise(r => setTimeout(r, 800));
             }
             createStrip();
         }
@@ -353,62 +335,30 @@
         function takeSnap() {
             const video = document.getElementById('video');
             const canvas = document.createElement('canvas');
-            const targetWidth = 1440;
-            const targetHeight = 1080;
-            const targetRatio = targetWidth / targetHeight;
-
-            canvas.width = targetWidth;
-            canvas.height = targetHeight;
+            canvas.width = 1440; canvas.height = 1080;
             const ctx = canvas.getContext('2d');
-            ctx.filter = currentFilter;
-
+            
             playSound('cekrek');
             document.getElementById('flash').style.opacity = '1';
             setTimeout(() => document.getElementById('flash').style.opacity = '0', 100);
 
-            ctx.save();
-            ctx.translate(canvas.width, 0); 
-            ctx.scale(-1, 1);
-            
-            const sourceWidth = video.videoWidth;
-            const sourceHeight = video.videoHeight;
-            const sourceRatio = sourceWidth / sourceHeight;
-
-            let sx, sy, sWidth, sHeight;
-            if (sourceRatio > targetRatio) {
-                sWidth = sourceHeight * targetRatio;
-                sHeight = sourceHeight;
-                sx = (sourceWidth - sWidth) / 2;
-                sy = 0;
-            } else {
-                sWidth = sourceWidth;
-                sHeight = sourceWidth / targetRatio;
-                sx = 0;
-                sy = (sourceHeight - sHeight) / 2;
-            }
-
-            ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
-            ctx.restore();
-
-            const finalCanvas = document.createElement('canvas');
-            finalCanvas.width = targetWidth;
-            finalCanvas.height = targetHeight;
-            const finalCtx = finalCanvas.getContext('2d');
-            finalCtx.drawImage(canvas, 0, 0);
-
-            photos.push(finalCanvas.toDataURL('image/jpeg', 1.0));
+            ctx.filter = currentFilter;
+            ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            photos.push(canvas.toDataURL('image/jpeg', 0.9));
         }
 
         function createStrip() {
             const canvas = document.getElementById('output-canvas');
             const ctx = canvas.getContext('2d');
-            canvas.width = 1200; 
-            canvas.height = 3600;
+            canvas.width = 1200; canvas.height = 3600;
             ctx.fillStyle = "#fff";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
             let loaded = 0;
             photos.forEach((src, i) => {
                 const img = new Image();
+                img.crossOrigin = "anonymous"; // Penting untuk gambar dari cloud
                 img.onload = () => {
                     ctx.drawImage(img, 90, 120 + (i * 840), 1020, 765);
                     loaded++;
@@ -419,15 +369,14 @@
         }
 
         function applyOverlay(ctx) {
-            const custom = JSON.parse(localStorage.getItem('custom_frames') || '[]');
-            const frame = custom.find(f => f.id === currentFrame);
-            if(frame) {
+            if(currentFrame !== 'default') {
                 const img = new Image();
+                img.crossOrigin = "anonymous";
                 img.onload = () => {
                     ctx.drawImage(img, 0, 0, 1200, 3600);
                     switchScreen('screen-result');
                 };
-                img.src = frame.data;
+                img.src = currentFrame;
             } else {
                 ctx.strokeStyle = "#000"; ctx.lineWidth = 30;
                 ctx.strokeRect(30, 30, 1140, 3540);
@@ -438,17 +387,15 @@
         async function downloadStrip() {
             const canvas = document.getElementById('output-canvas');
             const link = document.createElement('a');
-            link.download = 'photostrip_' + activeVoucher + '.jpg';
+            link.download = `photo_${activeVoucher}.jpg`;
             link.href = canvas.toDataURL('image/jpeg', 1.0);
             link.click();
             await _supabase.from('vouchers').update({ used: true, used_at: new Date().toLocaleTimeString() }).eq('code', activeVoucher);
-            setTimeout(() => location.reload(), 1500);
+            setTimeout(() => location.reload(), 1000);
         }
 
-        // Jalankan saat halaman siap
-        window.addEventListener('load', () => {
-            loadUserFrames();
-        });
+        // Inisialisasi awal
+        window.addEventListener('load', fetchFrames);
     </script>
 </body>
 </html>
