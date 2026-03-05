@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Photobox Pro - Ultra HD Edition</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #6c5ce7; --danger: #ff7675; --dark: #2d3436; --light: #f9f9f9; }
         body { font-family: 'Segoe UI', sans-serif; background: #dfe6e9; margin: 0; display: flex; justify-content: center; padding: 20px; }
@@ -53,7 +54,7 @@
 
         <section id="screen-camera" class="hidden">
             <div class="camera-container">
-                <video id="video" autoplay playsinline></video>
+                <video id="video" autoplay playsinline muted></video>
                 <div id="countdown" class="hidden">3</div>
                 <div id="flash"></div>
             </div>
@@ -105,7 +106,7 @@
             </div>
             <div class="scroll-table">
                 <table id="voucher-table">
-                    <thead><tr><th>Kode</th><th>Status</th><th>Aksi</th></tr></thead>
+                    <thead><tr><th>Kode</th><th>Status</th><th>Waktu</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
@@ -115,7 +116,11 @@
     </div>
 
     <script>
-        // CONFIGURATION
+        // CONFIGURATION SUPABASE
+        const SUPABASE_URL = 'https://ukucdlkevgaxquspgive.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrdWNkbGtldmdheHF1c3BnaXZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2OTY5MjYsImV4cCI6MjA4ODI3MjkyNn0.TrPZR31Wriw--G-iQYjEHoJGkw6LW6C0OzF9rCGQBwQ';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         const ADMIN_PIN = "1234";
         const HARGA_PER_SESI = 15000;
 
@@ -124,7 +129,7 @@
         let currentFrame = 'default';
         let activeVoucher = null;
 
-        // AUDIO ENGINE
+        // AUDIO ENGINE (Tetap Sama)
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSound(type) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -150,7 +155,7 @@
             }
         }
 
-        // NAVIGATION LOGIC
+        // NAVIGATION LOGIC (Tetap Sama)
         function showAdminLogin() { switchScreen('screen-admin-login'); }
         function hideAdmin() { switchScreen('screen-voucher'); }
         function switchScreen(id) {
@@ -158,7 +163,7 @@
             document.getElementById(id).classList.remove('hidden');
         }
 
-        // ADMIN LOGIC
+        // ADMIN LOGIC (DIUBAH KE SUPABASE)
         function loginAdmin() {
             if(document.getElementById('admin-pin').value === ADMIN_PIN) {
                 switchScreen('screen-admin-panel');
@@ -168,28 +173,29 @@
 
         async function generateVouchers() {
             const qty = document.getElementById('gen-qty').value;
-            let db = JSON.parse(localStorage.getItem('vouchers') || '[]');
+            const newVouchers = [];
             for(let i=0; i<qty; i++) {
                 const code = Math.random().toString(36).substring(2, 10).toUpperCase();
-                const hash = await hashSHA256(code);
-                db.push({ hash, code, used: false, time: '-' });
+                newVouchers.push({ code: code, used: false, used_at: '-' });
             }
-            localStorage.setItem('vouchers', JSON.stringify(db));
+            await _supabase.from('vouchers').insert(newVouchers);
             renderAdmin();
         }
 
-        function renderAdmin() {
-            const db = JSON.parse(localStorage.getItem('vouchers') || '[]');
-            const stats = JSON.parse(localStorage.getItem('stats') || '{"sessions":0}');
+        async function renderAdmin() {
+            const { data: db } = await _supabase.from('vouchers').select('*').order('created_at', { ascending: false });
+            if(!db) return;
+
+            const usedCount = db.filter(v => v.used).length;
             const frames = JSON.parse(localStorage.getItem('custom_frames') || '[]');
 
             document.getElementById('stat-total').innerText = db.length;
-            document.getElementById('stat-used').innerText = db.filter(v => v.used).length;
-            document.getElementById('stat-sessions').innerText = stats.sessions;
-            document.getElementById('stat-income').innerText = (stats.sessions * HARGA_PER_SESI).toLocaleString('id-ID');
+            document.getElementById('stat-used').innerText = usedCount;
+            document.getElementById('stat-sessions').innerText = usedCount;
+            document.getElementById('stat-income').innerText = (usedCount * HARGA_PER_SESI).toLocaleString('id-ID');
 
             const tbody = document.querySelector('#voucher-table tbody');
-            tbody.innerHTML = db.slice().reverse().map(v => `<tr><td>${v.code}</td><td>${v.used?'✅':'⏳'}</td><td>${v.time}</td></tr>`).join('');
+            tbody.innerHTML = db.map(v => `<tr><td>${v.code}</td><td>${v.used?'✅':'⏳'}</td><td>${v.used_at}</td></tr>`).join('');
 
             document.getElementById('admin-frame-list').innerHTML = frames.map((f, i) => `
                 <div style="text-align:center; min-width:60px;">
@@ -199,6 +205,7 @@
             `).join('');
         }
 
+        // Frame Upload (Tetap Local karena file gambar terlalu besar untuk database gratis)
         function uploadFrame() {
             const file = document.getElementById('frame-upload').files[0];
             if(!file) return;
@@ -221,38 +228,32 @@
             loadUserFrames();
         }
 
-        function resetAllData() { if(confirm("Hapus semua data?")) { localStorage.clear(); location.reload(); } }
-
-        // USER LOGIC
-        async function hashSHA256(text) {
-            const msgUint8 = new TextEncoder().encode(text);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+        async function resetAllData() { 
+            if(confirm("Hapus semua data di Cloud?")) { 
+                await _supabase.from('vouchers').delete().neq('code', ''); 
+                localStorage.clear(); 
+                location.reload(); 
+            } 
         }
 
+        // USER LOGIC (DIUBAH KE SUPABASE)
         async function validateVoucher() {
             const input = document.getElementById('voucher-input').value.toUpperCase();
-            const hash = await hashSHA256(input);
-            const db = JSON.parse(localStorage.getItem('vouchers') || '[]');
-            const v = db.find(v => v.hash === hash && !v.used);
+            const { data: v } = await _supabase.from('vouchers').select('*').eq('code', input).eq('used', false).single();
             
             if (v) {
-                activeVoucher = hash;
+                activeVoucher = input;
                 switchScreen('screen-camera');
                 loadUserFrames();
                 startCamera();
             } else {
-                document.getElementById('voucher-msg').innerText = "Voucher tidak valid!";
+                document.getElementById('voucher-msg').innerText = "Voucher tidak valid atau sudah terpakai!";
             }
         }
 
         function startCamera() {
-            // PENGATURAN RESOLUSI TINGGI (Full HD)
             navigator.mediaDevices.getUserMedia({ 
-                video: { 
-                    width: { ideal: 1920 }, 
-                    height: { ideal: 1080 } 
-                } 
+                video: { width: { ideal: 1920 }, height: { ideal: 1080 } } 
             })
             .then(s => document.getElementById('video').srcObject = s);
         }
@@ -305,23 +306,16 @@
         function takeSnap() {
             const video = document.getElementById('video');
             const canvas = document.createElement('canvas');
-            
-            // RESOLUSI TANGKAPAN HD (4:3 ratio sesuai kotak strip)
             canvas.width = 1440; 
             canvas.height = 1080;
-            
             const ctx = canvas.getContext('2d');
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
-            
             playSound('cekrek');
             document.getElementById('flash').style.opacity = '1';
             setTimeout(() => document.getElementById('flash').style.opacity = '0', 100);
-
             ctx.filter = currentFilter;
             ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
-            
-            // Draw video ke canvas resolusi tinggi
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             photos.push(canvas.toDataURL('image/jpeg', 1.0));
         }
@@ -329,22 +323,14 @@
         function createStrip() {
             const canvas = document.getElementById('output-canvas');
             const ctx = canvas.getContext('2d');
-            
-            // RESOLUSI KANVAS ULTRA HD (3x Lipat dari sebelumnya)
             canvas.width = 1200; 
             canvas.height = 3600;
-            
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
-            
             ctx.fillStyle = "#fff";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
             let loaded = 0;
             photos.forEach((src, i) => {
                 const img = new Image();
                 img.onload = () => {
-                    // Penempatan presisi dengan resolusi tinggi
                     ctx.drawImage(img, 90, 120 + (i * 840), 1020, 765);
                     loaded++;
                     if(loaded === 4) applyOverlay(ctx);
@@ -370,23 +356,17 @@
             }
         }
 
-        function downloadStrip() {
+        async function downloadStrip() {
             const canvas = document.getElementById('output-canvas');
             const link = document.createElement('a');
-            link.download = 'photostrip_HD_' + Date.now() + '.jpg';
-            
-            // DOWNLOAD DENGAN KUALITAS MAKSIMAL (1.0)
+            link.download = 'photostrip_' + activeVoucher + '.jpg';
             link.href = canvas.toDataURL('image/jpeg', 1.0);
             link.click();
             
-            let db = JSON.parse(localStorage.getItem('vouchers') || '[]');
-            let v = db.find(v => v.hash === activeVoucher);
-            if(v) { v.used = true; v.time = new Date().toLocaleTimeString(); }
-            localStorage.setItem('vouchers', JSON.stringify(db));
-            
-            let stats = JSON.parse(localStorage.getItem('stats') || '{"sessions":0}');
-            stats.sessions++;
-            localStorage.setItem('stats', JSON.stringify(stats));
+            // UPDATE CLOUD STATUS
+            await _supabase.from('vouchers')
+                .update({ used: true, used_at: new Date().toLocaleTimeString() })
+                .eq('code', activeVoucher);
             
             setTimeout(() => location.reload(), 1500);
         }
