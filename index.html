@@ -2,32 +2,76 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Photobox Pro - Ultra HD Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Photobox Pro - Final Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* TAMPILAN TIDAK BERUBAH SEDIKITPUN */
         :root { --primary: #6c5ce7; --danger: #ff7675; --dark: #2d3436; --light: #f9f9f9; }
-        body { font-family: 'Segoe UI', sans-serif; background: #dfe6e9; margin: 0; display: flex; justify-content: center; padding: 20px; }
-        .container { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 500px; position: relative; }
+        
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: #dfe6e9; 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh;
+        }
+
+        .container { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+            width: 95vw; 
+            max-width: 900px; 
+            position: relative; 
+            box-sizing: border-box;
+        }
+
         .hidden { display: none !important; }
-        .nav-admin { position: absolute; top: 15px; right: 15px; font-size: 12px; cursor: pointer; color: #aaa; }
-        .camera-container { position: relative; margin: 20px 0; border-radius: 15px; overflow: hidden; background: #000; line-height: 0; }
-        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        #countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 8rem; color: white; font-weight: bold; text-shadow: 0 0 20px rgba(0,0,0,0.5); z-index: 10; }
-        #flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 20; opacity: 0; transition: 0.1s; pointer-events: none; }
+        .nav-admin { position: absolute; top: 15px; right: 15px; font-size: 12px; cursor: pointer; color: #aaa; z-index: 100; }
+
+        /* LAYOUT RESPONSIF */
+        .camera-layout { display: flex; gap: 20px; flex-direction: row; }
+        @media (max-width: 768px) { .camera-layout { flex-direction: column; } }
+
+        .camera-container { 
+            flex: 2;
+            position: relative; 
+            border-radius: 15px; 
+            overflow: hidden; 
+            background: #000; 
+            aspect-ratio: 4/3;
+        }
+
+        video { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; /* Tampilan kamera tidak gepeng */
+            transform: scaleX(-1); 
+        }
+
+        #countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 6rem; color: white; font-weight: bold; z-index: 10; }
+        #flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 20; opacity: 0; pointer-events: none; }
+        
+        .sidebar-controls { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+
         button { padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; transition: 0.2s; background: #eee; }
-        .main-btn { background: var(--primary); color: white; width: 100%; margin-top: 10px; font-size: 16px; }
+        .main-btn { background: var(--primary); color: white; width: 100%; font-size: 16px; }
         .danger { background: var(--danger); color: white; }
         input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; text-align: center; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        
+        .filter-group, .frame-group { display: flex; flex-wrap: wrap; gap: 5px; margin: 5px 0; }
+        .active-opt { border: 2px solid var(--primary) !important; background: #e8e7ff; }
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .card { background: var(--dark); color: white; padding: 10px; border-radius: 10px; font-size: 12px; }
-        .scroll-table { max-height: 200px; overflow-y: auto; border: 1px solid #eee; margin-top: 10px; }
-        table { width: 100%; font-size: 12px; border-collapse: collapse; }
-        th, td { padding: 8px; border-bottom: 1px solid #eee; text-align: center; }
-        canvas { width: 100%; height: auto; border-radius: 10px; margin-top: 10px; border: 1px solid #ddd; }
-        .filter-group, .frame-group { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin: 10px 0; }
-        .active-opt { border: 2px solid var(--primary) !important; }
+        .scroll-table { max-height: 200px; overflow-y: auto; border: 1px solid #eee; margin-top: 10px;}
+        table { width: 100%; font-size: 11px; border-collapse: collapse; }
+        th, td { padding: 6px; border-bottom: 1px solid #eee; text-align: center; }
+
+        canvas { width: 100%; max-width: 300px; display: block; margin: 10px auto; border-radius: 10px; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
@@ -36,36 +80,44 @@
         <div class="nav-admin" onclick="showAdminLogin()">⚙️ Admin</div>
 
         <section id="screen-voucher">
-            <h1 style="margin-top:0">📸 Photobox</h1>
-            <p>Silakan masukkan kode voucher Anda</p>
+            <h1 style="margin:0; text-align: center;">📸 Photobox</h1>
+            <p style="text-align: center;">Masukkan kode voucher Anda</p>
             <input type="text" id="voucher-input" placeholder="Ketik Kode Di Sini" maxlength="8" style="text-transform: uppercase;">
             <button class="main-btn" onclick="validateVoucher()">MULAI FOTO</button>
-            <p id="voucher-msg" style="color:red; font-size:13px;"></p>
+            <p id="voucher-msg" style="color:red; font-size:13px; text-align: center;"></p>
         </section>
 
         <section id="screen-camera" class="hidden">
-            <div class="camera-container">
-                <video id="video" autoplay playsinline muted></video>
-                <div id="countdown" class="hidden">3</div>
-                <div id="flash"></div>
+            <div class="camera-layout">
+                <div class="camera-container">
+                    <video id="video" autoplay playsinline muted></video>
+                    <div id="countdown" class="hidden">3</div>
+                    <div id="flash"></div>
+                </div>
+
+                <div class="sidebar-controls">
+                    <div style="font-size:12px; font-weight: bold;">Filter:</div>
+                    <div class="filter-group">
+                        <button onclick="setFilter('none', this)" class="active-opt">Normal</button>
+                        <button onclick="setFilter('grayscale(100%)', this)">B&W</button>
+                        <button onclick="setFilter('sepia(100%)', this)">Sepia</button>
+                    </div>
+                    
+                    <div style="font-size:12px; font-weight: bold;">Frame:</div>
+                    <div id="user-frame-list" class="frame-group">
+                        <button id="default-frame-btn" onclick="setFrame('default', this)" class="active-opt">Polos</button>
+                    </div>
+
+                    <button id="start-btn" class="main-btn" onclick="startSequence()">AMBIL FOTO (4x)</button>
+                </div>
             </div>
-            <div class="control-label" style="font-size:12px; color:#666">Pilih Filter & Frame:</div>
-            <div class="filter-group">
-                <button onclick="setFilter('none', this)" class="active-opt">Normal</button>
-                <button onclick="setFilter('grayscale(100%)', this)">B&W</button>
-                <button onclick="setFilter('sepia(100%)', this)">Sepia</button>
-            </div>
-            <div id="user-frame-list" class="frame-group">
-                <button id="default-frame-btn" onclick="setFrame('default', this)" class="active-opt">Polos</button>
-            </div>
-            <button id="start-btn" class="main-btn" onclick="startSequence()">AMBIL FOTO (4x)</button>
         </section>
 
         <section id="screen-result" class="hidden">
-            <h3>Selesai! ✨</h3>
+            <h3 style="text-align:center">Selesai! ✨</h3>
             <canvas id="output-canvas"></canvas>
-            <button onclick="downloadStrip()" class="main-btn">Download & Simpan (Ultra HD)</button>
-            <button onclick="location.reload()" style="width:100%; margin-top:10px">Kembali ke Menu</button>
+            <button onclick="downloadStrip()" class="main-btn">Download & Simpan</button>
+            <button onclick="location.reload()" style="width:100%; margin-top:10px">Kembali</button>
         </section>
 
         <section id="screen-admin-login" class="hidden">
@@ -78,47 +130,46 @@
         <section id="screen-admin-panel" class="hidden">
             <h2 style="margin-top:0">📊 Dashboard</h2>
             <div class="stats-grid">
-                <div class="card">Voucher: <br><b id="stat-total">0</b></div>
-                <div class="card">Terpakai: <br><b id="stat-used">0</b></div>
-                <div class="card">Sesi: <br><b id="stat-sessions">0</b></div>
-                <div class="card">Income: <br><b>Rp <span id="stat-income">0</span></b></div>
+                <div class="card">Total: <b id="stat-total">0</b></div>
+                <div class="card">Terpakai: <b id="stat-used">0</b></div>
+                <div class="card">Sesi: <b id="stat-sessions">0</b></div>
+                <div class="card">Income: Rp <span id="stat-income">0</span></div>
             </div>
             <hr>
-            <div style="text-align:left; font-size:14px">
-                <b>Frame PNG:</b>
-                <input type="file" id="frame-upload" accept="image/png" style="font-size:10px">
-                <button onclick="uploadFrame()" style="width:100%; font-size:12px">Upload Frame</button>
-            </div>
-            <div id="admin-frame-list" style="display:flex; gap:5px; overflow-x:auto; padding:10px 0;"></div>
+            <input type="file" id="frame-upload" accept="image/png" style="font-size:10px">
+            <button onclick="uploadFrame()" style="width:100%; margin-bottom: 10px;">Upload Frame</button>
+            <div id="admin-frame-list" style="display:flex; gap:5px; overflow-x:auto; padding-bottom:10px;"></div>
             <hr>
             <div style="display:flex; gap:5px">
                 <input type="number" id="gen-qty" value="5" style="width:60px; margin:0">
-                <button onclick="generateVouchers()" style="flex:1">Generate Voucher</button>
+                <button onclick="generateVouchers()" style="flex:1">Generate</button>
             </div>
             <div class="scroll-table">
                 <table id="voucher-table">
-                    <thead><tr><th>Kode</th><th>Status</th></tr></thead>
+                    <thead><tr><th>Kode</th><th>Status</th><th>Waktu</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
-            <button class="danger" onclick="resetAllData()" style="width:100%; margin-top:20px">RESET DATA</button>
+            <button class="danger" onclick="resetAllData()" style="width:100%; margin-top:10px">RESET DATA</button>
             <button onclick="hideAdmin()" style="width:100%; margin-top:10px">Keluar</button>
         </section>
     </div>
 
     <script>
+        // --- UBAH BAGIAN INI DENGAN DATA SUPABASE ANDA ---
         const SUPABASE_URL = 'https://ukucdlkevgaxquspgive.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrdWNkbGtldmdheHF1c3BnaXZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2OTY5MjYsImV4cCI6MjA4ODI3MjkyNn0.TrPZR31Wriw--G-iQYjEHoJGkw6LW6C0OzF9rCGQBwQ';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const ADMIN_PIN = "1234";
         const HARGA_PER_SESI = 15000;
+
         let photos = [];
         let currentFilter = 'none';
         let currentFrame = 'default';
         let activeVoucher = null;
 
-        // AUDIO & NAVIGATION (TIDAK BERUBAH)
+        // AUDIO ENGINE
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSound(type) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -144,12 +195,116 @@
             }
         }
 
-        function switchScreen(id) { document.querySelectorAll('section').forEach(s => s.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
+        // NAVIGATION
         function showAdminLogin() { switchScreen('screen-admin-login'); }
         function hideAdmin() { switchScreen('screen-voucher'); }
-        function loginAdmin() { if(document.getElementById('admin-pin').value === ADMIN_PIN) { switchScreen('screen-admin-panel'); renderAdmin(); } else { alert("PIN Salah!"); } }
+        function switchScreen(id) {
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
 
-        // --- CORE LOGIC PERBAIKAN FILTER (HANYA BAGIAN INI YANG DIUBAH) ---
+        // ADMIN LOGIC
+        function loginAdmin() {
+            if(document.getElementById('admin-pin').value === ADMIN_PIN) {
+                switchScreen('screen-admin-panel');
+                renderAdmin();
+            } else { alert("PIN Salah!"); }
+        }
+
+        async function generateVouchers() {
+            const qty = document.getElementById('gen-qty').value;
+            const newVouchers = [];
+            for(let i=0; i<qty; i++) {
+                const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+                newVouchers.push({ code: code, used: false, used_at: '-' });
+            }
+            await _supabase.from('vouchers').insert(newVouchers);
+            renderAdmin();
+        }
+
+        async function renderAdmin() {
+            const { data: db } = await _supabase.from('vouchers').select('*').order('created_at', { ascending: false });
+            if(!db) return;
+            const usedCount = db.filter(v => v.used).length;
+            const frames = JSON.parse(localStorage.getItem('custom_frames') || '[]');
+
+            document.getElementById('stat-total').innerText = db.length;
+            document.getElementById('stat-used').innerText = usedCount;
+            document.getElementById('stat-sessions').innerText = usedCount;
+            document.getElementById('stat-income').innerText = (usedCount * HARGA_PER_SESI).toLocaleString('id-ID');
+
+            const tbody = document.querySelector('#voucher-table tbody');
+            tbody.innerHTML = db.map(v => `<tr><td>${v.code}</td><td>${v.used?'✅':'⏳'}</td><td>${v.used_at}</td></tr>`).join('');
+
+            document.getElementById('admin-frame-list').innerHTML = frames.map((f, i) => `
+                <div style="text-align:center; min-width:60px;">
+                    <img src="${f.data}" style="height:60px; border:1px solid #ddd;"><br>
+                    <button class="danger" onclick="deleteFrame(${i})" style="padding:2px 5px; font-size:9px;">Hapus</button>
+                </div>
+            `).join('');
+        }
+
+        function uploadFrame() {
+            const file = document.getElementById('frame-upload').files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                let frames = JSON.parse(localStorage.getItem('custom_frames') || '[]');
+                frames.push({ id: 'f'+Date.now(), name: file.name, data: e.target.result });
+                localStorage.setItem('custom_frames', JSON.stringify(frames));
+                renderAdmin();
+                loadUserFrames();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function deleteFrame(i) {
+            let f = JSON.parse(localStorage.getItem('custom_frames') || '[]');
+            f.splice(i, 1);
+            localStorage.setItem('custom_frames', JSON.stringify(f));
+            renderAdmin();
+            loadUserFrames();
+        }
+
+        async function resetAllData() { 
+            if(confirm("Hapus semua data di Cloud?")) { 
+                await _supabase.from('vouchers').delete().neq('code', ''); 
+                localStorage.clear(); 
+                location.reload(); 
+            } 
+        }
+
+        // USER LOGIC
+        async function validateVoucher() {
+            const input = document.getElementById('voucher-input').value.toUpperCase();
+            const { data: v } = await _supabase.from('vouchers').select('*').eq('code', input).eq('used', false).single();
+            if (v) {
+                activeVoucher = input;
+                switchScreen('screen-camera');
+                loadUserFrames();
+                startCamera();
+            } else {
+                document.getElementById('voucher-msg').innerText = "Voucher tidak valid!";
+            }
+        }
+
+        function startCamera() {
+            navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1920 }, height: { ideal: 1080 } } })
+            .then(s => document.getElementById('video').srcObject = s);
+        }
+
+        function loadUserFrames() {
+            const container = document.getElementById('user-frame-list');
+            container.innerHTML = '<button id="default-frame-btn" onclick="setFrame(\'default\', this)" class="active-opt">Polos</button>';
+            const custom = JSON.parse(localStorage.getItem('custom_frames') || '[]');
+            custom.forEach(f => {
+                const btn = document.createElement('button');
+                btn.innerText = f.name.split('.')[0].substring(0,6);
+                btn.onclick = () => setFrame(f.id, btn);
+                container.appendChild(btn);
+            });
+        }
+
         function setFilter(f, btn) {
             currentFilter = f;
             document.getElementById('video').style.filter = f;
@@ -157,55 +312,10 @@
             btn.classList.add('active-opt');
         }
 
-        function takeSnap() {
-            const video = document.getElementById('video');
-            const canvas = document.createElement('canvas');
-            canvas.width = 1440; canvas.height = 1080;
-            const ctx = canvas.getContext('2d');
-            
-            // PAKSA FILTER DI KANVAS
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.filter = currentFilter; 
-
-            playSound('cekrek');
-            document.getElementById('flash').style.opacity = '1';
-            setTimeout(() => document.getElementById('flash').style.opacity = '0', 100);
-
-            ctx.save();
-            ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
-            
-            // ANTI-GEPENG LOGIC
-            const targetRatio = canvas.width / canvas.height;
-            const sourceRatio = video.videoWidth / video.videoHeight;
-            let sx, sy, sWidth, sHeight;
-            if (sourceRatio > targetRatio) {
-                sWidth = video.videoHeight * targetRatio;
-                sHeight = video.videoHeight;
-                sx = (video.videoWidth - sWidth) / 2;
-                sy = 0;
-            } else {
-                sWidth = video.videoWidth;
-                sHeight = video.videoWidth / targetRatio;
-                sx = 0;
-                sy = (video.videoHeight - sHeight) / 2;
-            }
-
-            ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
-            ctx.restore();
-            photos.push(canvas.toDataURL('image/jpeg', 1.0));
-        }
-
-        // --- BAGIAN LAINNYA TETAP SAMA ---
-        async function validateVoucher() {
-            const input = document.getElementById('voucher-input').value.toUpperCase();
-            const { data: v } = await _supabase.from('vouchers').select('*').eq('code', input).eq('used', false).single();
-            if (v) { activeVoucher = input; switchScreen('screen-camera'); loadUserFrames(); startCamera(); }
-            else { document.getElementById('voucher-msg').innerText = "Voucher tidak valid!"; }
-        }
-
-        function startCamera() {
-            navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1920 }, height: { ideal: 1080 } } })
-            .then(s => document.getElementById('video').srcObject = s);
+        function setFrame(f, btn) {
+            currentFrame = f;
+            document.querySelectorAll('.frame-group button').forEach(b => b.classList.remove('active-opt'));
+            btn.classList.add('active-opt');
         }
 
         async function startSequence() {
@@ -215,7 +325,12 @@
                 let count = 3;
                 const cd = document.getElementById('countdown');
                 cd.classList.remove('hidden');
-                while(count > 0) { cd.innerText = count; playSound('tit'); await new Promise(r => setTimeout(r, 1000)); count--; }
+                while(count > 0) {
+                    cd.innerText = count;
+                    playSound('tit');
+                    await new Promise(r => setTimeout(r, 1000));
+                    count--;
+                }
                 cd.classList.add('hidden');
                 takeSnap();
                 await new Promise(r => setTimeout(r, 1000));
@@ -223,11 +338,61 @@
             createStrip();
         }
 
+        // --- LOGIKA ANTI GEPENG + PERBAIKAN FILTER ---
+        function takeSnap() {
+            const video = document.getElementById('video');
+            const canvas = document.createElement('canvas');
+            
+            const targetWidth = 1440;
+            const targetHeight = 1080;
+            const targetRatio = targetWidth / targetHeight;
+
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+
+            // Terapkan filter ke kanvas (Agar permanen saat diunduh)
+            ctx.filter = currentFilter;
+
+            playSound('cekrek');
+            document.getElementById('flash').style.opacity = '1';
+            setTimeout(() => document.getElementById('flash').style.opacity = '0', 100);
+
+            // Mirroring
+            ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
+            
+            // Logika Crop Center
+            const sourceWidth = video.videoWidth;
+            const sourceHeight = video.videoHeight;
+            const sourceRatio = sourceWidth / sourceHeight;
+
+            let sx, sy, sWidth, sHeight;
+            if (sourceRatio > targetRatio) {
+                sWidth = sourceHeight * targetRatio;
+                sHeight = sourceHeight;
+                sx = (sourceWidth - sWidth) / 2;
+                sy = 0;
+            } else {
+                sWidth = sourceWidth;
+                sHeight = sourceWidth / targetRatio;
+                sx = 0;
+                sy = (sourceHeight - sHeight) / 2;
+            }
+
+            ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
+            photos.push(canvas.toDataURL('image/jpeg', 1.0));
+        }
+
         function createStrip() {
             const canvas = document.getElementById('output-canvas');
             const ctx = canvas.getContext('2d');
-            canvas.width = 1200; canvas.height = 3600;
-            ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            canvas.width = 1200; 
+            canvas.height = 3600;
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             let loaded = 0;
             photos.forEach((src, i) => {
                 const img = new Image();
@@ -245,7 +410,10 @@
             const frame = custom.find(f => f.id === currentFrame);
             if(frame) {
                 const img = new Image();
-                img.onload = () => { ctx.drawImage(img, 0, 0, 1200, 3600); switchScreen('screen-result'); };
+                img.onload = () => {
+                    ctx.drawImage(img, 0, 0, 1200, 3600);
+                    switchScreen('screen-result');
+                };
                 img.src = frame.data;
             } else {
                 ctx.strokeStyle = "#000"; ctx.lineWidth = 30;
@@ -260,32 +428,13 @@
             link.download = 'photostrip_' + activeVoucher + '.jpg';
             link.href = canvas.toDataURL('image/jpeg', 1.0);
             link.click();
-            await _supabase.from('vouchers').update({ used: true, used_at: new Date().toLocaleTimeString() }).eq('code', activeVoucher);
+            
+            await _supabase.from('vouchers')
+                .update({ used: true, used_at: new Date().toLocaleTimeString() })
+                .eq('code', activeVoucher);
+            
             setTimeout(() => location.reload(), 1500);
         }
-
-        async function generateVouchers() {
-            const qty = document.getElementById('gen-qty').value;
-            const newVouchers = [];
-            for(let i=0; i<qty; i++) {
-                const code = Math.random().toString(36).substring(2, 10).toUpperCase();
-                newVouchers.push({ code: code, used: false, used_at: '-' });
-            }
-            await _supabase.from('vouchers').insert(newVouchers);
-            renderAdmin();
-        }
-
-        async function renderAdmin() {
-            const { data: db } = await _supabase.from('vouchers').select('*').order('created_at', { ascending: false });
-            if(!db) return;
-            document.getElementById('stat-total').innerText = db.length;
-            document.getElementById('stat-used').innerText = db.filter(v => v.used).length;
-            document.querySelector('#voucher-table tbody').innerHTML = db.map(v => `<tr><td>${v.code}</td><td>${v.used?'✅':'⏳'}</td></tr>`).join('');
-        }
-        function uploadFrame() { const file = document.getElementById('frame-upload').files[0]; if(!file) return; const reader = new FileReader(); reader.onload = (e) => { let f = JSON.parse(localStorage.getItem('custom_frames') || '[]'); f.push({ id: 'f'+Date.now(), name: file.name, data: e.target.result }); localStorage.setItem('custom_frames', JSON.stringify(f)); renderAdmin(); loadUserFrames(); }; reader.readAsDataURL(file); }
-        function loadUserFrames() { const container = document.getElementById('user-frame-list'); container.innerHTML = '<button onclick="setFrame(\'default\', this)" class="active-opt">Polos</button>'; JSON.parse(localStorage.getItem('custom_frames') || '[]').forEach(f => { const btn = document.createElement('button'); btn.innerText = "Frame"; btn.onclick = () => setFrame(f.id, btn); container.appendChild(btn); }); }
-        function setFrame(f, btn) { currentFrame = f; document.querySelectorAll('.frame-group button').forEach(b => b.classList.remove('active-opt')); btn.classList.add('active-opt'); }
-        async function resetAllData() { if(confirm("Hapus?")) { await _supabase.from('vouchers').delete().neq('code', ''); localStorage.clear(); location.reload(); } }
     </script>
 </body>
 </html>
