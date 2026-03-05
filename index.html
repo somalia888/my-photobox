@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photobox Pro - Ultra HD Edition</title>
+    <style>
+        :root { --primary: #6c5ce7; --danger: #ff7675; --dark: #2d3436; --light: #f9f9f9; }
+        body { font-family: 'Segoe UI', sans-serif; background: #dfe6e9; margin: 0; display: flex; justify-content: center; padding: 20px; }
+        .container { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 500px; position: relative; }
+        .hidden { display: none !important; }
+        
+        /* Navigation */
+        .nav-admin { position: absolute; top: 15px; right: 15px; font-size: 12px; cursor: pointer; color: #aaa; }
+
+        /* Camera & Flash */
+        .camera-container { position: relative; margin: 20px 0; border-radius: 15px; overflow: hidden; background: #000; line-height: 0; }
+        video { width: 100%; transform: scaleX(-1); }
+        #countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 8rem; color: white; font-weight: bold; text-shadow: 0 0 20px rgba(0,0,0,0.5); z-index: 10; }
+        #flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 20; opacity: 0; transition: 0.1s; pointer-events: none; }
+        
+        /* UI Elements */
+        button { padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; transition: 0.2s; background: #eee; }
+        .main-btn { background: var(--primary); color: white; width: 100%; margin-top: 10px; font-size: 16px; }
+        .danger { background: var(--danger); color: white; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; text-align: center; }
+        
+        /* Admin Panel */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .card { background: var(--dark); color: white; padding: 10px; border-radius: 10px; font-size: 12px; }
+        .scroll-table { max-height: 200px; overflow-y: auto; border: 1px solid #eee; margin-top: 10px; }
+        table { width: 100%; font-size: 12px; border-collapse: collapse; }
+        th, td { padding: 8px; border-bottom: 1px solid #eee; text-align: center; }
+        
+        /* Result */
+        canvas { width: 100%; height: auto; border-radius: 10px; margin-top: 10px; border: 1px solid #ddd; }
+        .filter-group, .frame-group { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin: 10px 0; }
+        .active-opt { border: 2px solid var(--primary) !important; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="nav-admin" onclick="showAdminLogin()">⚙️ Admin</div>
+
+        <section id="screen-voucher">
+            <h1 style="margin-top:0">📸 Photobox</h1>
+            <p>Silakan masukkan kode voucher Anda</p>
+            <input type="text" id="voucher-input" placeholder="Ketik Kode Di Sini" maxlength="8" style="text-transform: uppercase;">
+            <button class="main-btn" onclick="validateVoucher()">MULAI FOTO</button>
+            <p id="voucher-msg" style="color:red; font-size:13px;"></p>
+        </section>
+
+        <section id="screen-camera" class="hidden">
+            <div class="camera-container">
+                <video id="video" autoplay playsinline></video>
+                <div id="countdown" class="hidden">3</div>
+                <div id="flash"></div>
+            </div>
+            <div class="control-label" style="font-size:12px; color:#666">Pilih Filter & Frame:</div>
+            <div class="filter-group">
+                <button onclick="setFilter('none', this)" class="active-opt">Normal</button>
+                <button onclick="setFilter('grayscale(100%)', this)">B&W</button>
+                <button onclick="setFilter('sepia(100%)', this)">Sepia</button>
+            </div>
+            <div id="user-frame-list" class="frame-group">
+                <button id="default-frame-btn" onclick="setFrame('default', this)" class="active-opt">Polos</button>
+            </div>
+            <button id="start-btn" class="main-btn" onclick="startSequence()">AMBIL FOTO (4x)</button>
+        </section>
+
+        <section id="screen-result" class="hidden">
+            <h3>Selesai! ✨</h3>
+            <canvas id="output-canvas"></canvas>
+            <button onclick="downloadStrip()" class="main-btn">Download & Simpan (Ultra HD)</button>
+            <button onclick="location.reload()" style="width:100%; margin-top:10px">Kembali ke Menu</button>
+        </section>
+
+        <section id="screen-admin-login" class="hidden">
+            <h3>Admin Access</h3>
+            <input type="password" id="admin-pin" placeholder="Masukkan PIN">
+            <button class="main-btn" onclick="loginAdmin()">Login</button>
+            <button onclick="hideAdmin()" style="width:100%; margin-top:10px">Batal</button>
+        </section>
+
+        <section id="screen-admin-panel" class="hidden" style="max-width: 100%;">
+            <h2 style="margin-top:0">📊 Dashboard</h2>
+            <div class="stats-grid">
+                <div class="card">Voucher: <br><b id="stat-total">0</b></div>
+                <div class="card">Terpakai: <br><b id="stat-used">0</b></div>
+                <div class="card">Sesi: <br><b id="stat-sessions">0</b></div>
+                <div class="card">Income: <br><b>Rp <span id="stat-income">0</span></b></div>
+            </div>
+            <hr>
+            <div style="text-align:left; font-size:14px">
+                <b>Frame PNG (High Res 1200x3600 disarankan):</b>
+                <input type="file" id="frame-upload" accept="image/png" style="font-size:10px">
+                <button onclick="uploadFrame()" style="width:100%; font-size:12px">Upload Frame</button>
+            </div>
+            <div id="admin-frame-list" style="display:flex; gap:5px; overflow-x:auto; padding:10px 0;"></div>
+            <hr>
+            <div style="display:flex; gap:5px">
+                <input type="number" id="gen-qty" value="5" style="width:60px; margin:0">
+                <button onclick="generateVouchers()" style="flex:1">Generate Voucher</button>
+            </div>
+            <div class="scroll-table">
+                <table id="voucher-table">
+                    <thead><tr><th>Kode</th><th>Status</th><th>Aksi</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <button class="danger" onclick="resetAllData()" style="width:100%; margin-top:20px">RESET SEMUA DATA</button>
+            <button onclick="hideAdmin()" style="width:100%; margin-top:10px">Keluar Admin</button>
+        </section>
+    </div>
+
+    <script>
+        // CONFIGURATION
+        const ADMIN_PIN = "1234";
+        const HARGA_PER_SESI = 15000;
+
+        let photos = [];
+        let currentFilter = 'none';
+        let currentFrame = 'default';
+        let activeVoucher = null;
+
+        // AUDIO ENGINE
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (type === 'tit') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'cekrek') {
+                const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.1, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < buffer.length; i++) data[i] = Math.random() * 2 - 1;
+                const source = audioCtx.createBufferSource();
+                source.buffer = buffer;
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                source.connect(gain); gain.connect(audioCtx.destination);
+                source.start();
+            }
+        }
+
+        // NAVIGATION LOGIC
+        function showAdminLogin() { switchScreen('screen-admin-login'); }
+        function hideAdmin() { switchScreen('screen-voucher'); }
+        function switchScreen(id) {
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        // ADMIN LOGIC
+        function loginAdmin() {
+            if(document.getElementById('admin-pin').value === ADMIN_PIN) {
+                switchScreen('screen-admin-panel');
+                renderAdmin();
+            } else { alert("PIN Salah!"); }
+        }
+
+        async function generateVouchers() {
+            const qty = document.getElementById('gen-qty').value;
+            let db = JSON.parse(localStorage.getItem('vouchers') || '[]');
+            for(let i=0; i<qty; i++) {
+                const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+                const hash = await hashSHA256(code);
+                db.push({ hash, code, used: false, time: '-' });
+            }
+            localStorage.setItem('vouchers', JSON.stringify(db));
+            renderAdmin();
+        }
+
+        function renderAdmin() {
+            const db = JSON.parse(localStorage.getItem('vouchers') || '[]');
+            const stats = JSON.parse(localStorage.getItem('stats') || '{"sessions":0}');
+            const frames = JSON.parse(localStorage.getItem('custom_frames') || '[]');
+
+            document.getElementById('stat-total').innerText = db.length;
+            document.getElementById('stat-used').innerText = db.filter(v => v.used).length;
+            document.getElementById('stat-sessions').innerText = stats.sessions;
+            document.getElementById('stat-income').innerText = (stats.sessions * HARGA_PER_SESI).toLocaleString('id-ID');
+
+            const tbody = document.querySelector('#voucher-table tbody');
+            tbody.innerHTML = db.slice().reverse().map(v => `<tr><td>${v.code}</td><td>${v.used?'✅':'⏳'}</td><td>${v.time}</td></tr>`).join('');
+
+            document.getElementById('admin-frame-list').innerHTML = frames.map((f, i) => `
+                <div style="text-align:center; min-width:60px;">
+                    <img src="${f.data}" style="height:60px; border:1px solid #ddd;"><br>
+                    <button class="danger" onclick="deleteFrame(${i})" style="padding:2px 5px; font-size:9px;">Hapus</button>
+                </div>
+            `).join('');
+        }
+
+        function uploadFrame() {
+            const file = document.getElementById('frame-upload').files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                let frames = JSON.parse(localStorage.getItem('custom_frames') || '[]');
+                frames.push({ id: 'f'+Date.now(), name: file.name, data: e.target.result });
+                localStorage.setItem('custom_frames', JSON.stringify(frames));
+                renderAdmin();
+                loadUserFrames();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function deleteFrame(i) {
+            let f = JSON.parse(localStorage.getItem('custom_frames') || '[]');
+            f.splice(i, 1);
+            localStorage.setItem('custom_frames', JSON.stringify(f));
+            renderAdmin();
+            loadUserFrames();
+        }
+
+        function resetAllData() { if(confirm("Hapus semua data?")) { localStorage.clear(); location.reload(); } }
+
+        // USER LOGIC
+        async function hashSHA256(text) {
+            const msgUint8 = new TextEncoder().encode(text);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function validateVoucher() {
+            const input = document.getElementById('voucher-input').value.toUpperCase();
+            const hash = await hashSHA256(input);
+            const db = JSON.parse(localStorage.getItem('vouchers') || '[]');
+            const v = db.find(v => v.hash === hash && !v.used);
+            
+            if (v) {
+                activeVoucher = hash;
+                switchScreen('screen-camera');
+                loadUserFrames();
+                startCamera();
+            } else {
+                document.getElementById('voucher-msg').innerText = "Voucher tidak valid!";
+            }
+        }
+
+        function startCamera() {
+            // PENGATURAN RESOLUSI TINGGI (Full HD)
+            navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    width: { ideal: 1920 }, 
+                    height: { ideal: 1080 } 
+                } 
+            })
+            .then(s => document.getElementById('video').srcObject = s);
+        }
+
+        function loadUserFrames() {
+            const container = document.getElementById('user-frame-list');
+            container.innerHTML = '<button id="default-frame-btn" onclick="setFrame(\'default\', this)" class="active-opt">Polos</button>';
+            const custom = JSON.parse(localStorage.getItem('custom_frames') || '[]');
+            custom.forEach(f => {
+                const btn = document.createElement('button');
+                btn.innerText = f.name.split('.')[0].substring(0,8);
+                btn.onclick = () => setFrame(f.id, btn);
+                container.appendChild(btn);
+            });
+        }
+
+        function setFilter(f, btn) {
+            currentFilter = f;
+            document.getElementById('video').style.filter = f;
+            document.querySelectorAll('.filter-group button').forEach(b => b.classList.remove('active-opt'));
+            btn.classList.add('active-opt');
+        }
+
+        function setFrame(f, btn) {
+            currentFrame = f;
+            document.querySelectorAll('.frame-group button').forEach(b => b.classList.remove('active-opt'));
+            btn.classList.add('active-opt');
+        }
+
+        async function startSequence() {
+            photos = [];
+            document.getElementById('start-btn').disabled = true;
+            for (let i = 0; i < 4; i++) {
+                let count = 3;
+                const cd = document.getElementById('countdown');
+                cd.classList.remove('hidden');
+                while(count > 0) {
+                    cd.innerText = count;
+                    playSound('tit');
+                    await new Promise(r => setTimeout(r, 1000));
+                    count--;
+                }
+                cd.classList.add('hidden');
+                takeSnap();
+                await new Promise(r => setTimeout(r, 1000));
+            }
+            createStrip();
+        }
+
+        function takeSnap() {
+            const video = document.getElementById('video');
+            const canvas = document.createElement('canvas');
+            
+            // RESOLUSI TANGKAPAN HD (4:3 ratio sesuai kotak strip)
+            canvas.width = 1440; 
+            canvas.height = 1080;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            playSound('cekrek');
+            document.getElementById('flash').style.opacity = '1';
+            setTimeout(() => document.getElementById('flash').style.opacity = '0', 100);
+
+            ctx.filter = currentFilter;
+            ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
+            
+            // Draw video ke canvas resolusi tinggi
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            photos.push(canvas.toDataURL('image/jpeg', 1.0));
+        }
+
+        function createStrip() {
+            const canvas = document.getElementById('output-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // RESOLUSI KANVAS ULTRA HD (3x Lipat dari sebelumnya)
+            canvas.width = 1200; 
+            canvas.height = 3600;
+            
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            let loaded = 0;
+            photos.forEach((src, i) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Penempatan presisi dengan resolusi tinggi
+                    ctx.drawImage(img, 90, 120 + (i * 840), 1020, 765);
+                    loaded++;
+                    if(loaded === 4) applyOverlay(ctx);
+                };
+                img.src = src;
+            });
+        }
+
+        function applyOverlay(ctx) {
+            const custom = JSON.parse(localStorage.getItem('custom_frames') || '[]');
+            const frame = custom.find(f => f.id === currentFrame);
+            if(frame) {
+                const img = new Image();
+                img.onload = () => {
+                    ctx.drawImage(img, 0, 0, 1200, 3600);
+                    switchScreen('screen-result');
+                };
+                img.src = frame.data;
+            } else {
+                ctx.strokeStyle = "#000"; ctx.lineWidth = 30;
+                ctx.strokeRect(30, 30, 1140, 3540);
+                switchScreen('screen-result');
+            }
+        }
+
+        function downloadStrip() {
+            const canvas = document.getElementById('output-canvas');
+            const link = document.createElement('a');
+            link.download = 'photostrip_HD_' + Date.now() + '.jpg';
+            
+            // DOWNLOAD DENGAN KUALITAS MAKSIMAL (1.0)
+            link.href = canvas.toDataURL('image/jpeg', 1.0);
+            link.click();
+            
+            let db = JSON.parse(localStorage.getItem('vouchers') || '[]');
+            let v = db.find(v => v.hash === activeVoucher);
+            if(v) { v.used = true; v.time = new Date().toLocaleTimeString(); }
+            localStorage.setItem('vouchers', JSON.stringify(db));
+            
+            let stats = JSON.parse(localStorage.getItem('stats') || '{"sessions":0}');
+            stats.sessions++;
+            localStorage.setItem('stats', JSON.stringify(stats));
+            
+            setTimeout(() => location.reload(), 1500);
+        }
+    </script>
+</body>
+</html>
