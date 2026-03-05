@@ -48,7 +48,7 @@
         video { 
             width: 100%; 
             height: 100%; 
-            object-fit: cover; 
+            object-fit: cover; /* Tampilan kamera tidak gepeng */
             transform: scaleX(-1); 
         }
 
@@ -105,7 +105,8 @@
                     
                     <div style="font-size:12px; font-weight: bold;">Frame:</div>
                     <div id="user-frame-list" class="frame-group">
-                        </div>
+                        <button id="default-frame-btn" onclick="setFrame('default', this)" class="active-opt">Polos</button>
+                    </div>
 
                     <button id="start-btn" class="main-btn" onclick="startSequence()">AMBIL FOTO (4x)</button>
                 </div>
@@ -239,8 +240,7 @@
                 let frames = JSON.parse(localStorage.getItem('custom_frames') || '[]');
                 frames.push({ id: 'f'+Date.now(), name: file.name, data: e.target.result });
                 localStorage.setItem('custom_frames', JSON.stringify(frames));
-                renderAdmin(); 
-                loadUserFrames(); // Pastikan list di user terupdate
+                renderAdmin(); loadUserFrames();
             };
             reader.readAsDataURL(file);
         }
@@ -249,8 +249,7 @@
             let f = JSON.parse(localStorage.getItem('custom_frames') || '[]');
             f.splice(i, 1);
             localStorage.setItem('custom_frames', JSON.stringify(f));
-            renderAdmin(); 
-            loadUserFrames(); // Pastikan list di user terupdate
+            renderAdmin(); loadUserFrames();
         }
 
         async function resetAllData() { 
@@ -263,58 +262,22 @@
         async function validateVoucher() {
             const input = document.getElementById('voucher-input').value.toUpperCase();
             const { data: v } = await _supabase.from('vouchers').select('*').eq('code', input).eq('used', false).single();
-            if (v) { 
-                activeVoucher = input; 
-                loadUserFrames(); // Muat frame saat voucher valid
-                switchScreen('screen-camera'); 
-                startCamera(); 
-            }
+            if (v) { activeVoucher = input; switchScreen('screen-camera'); loadUserFrames(); startCamera(); }
             else { document.getElementById('voucher-msg').innerText = "Voucher tidak valid!"; }
         }
 
         function startCamera() {
-            // Pengaturan kamera lebih stabil untuk Handphone
-            const constraints = {
-                video: {
-                    width: { ideal: 1920 },
-                    height: { ideal: 1080 },
-                    facingMode: "user"
-                }
-            };
-            navigator.mediaDevices.getUserMedia(constraints)
-            .then(s => {
-                const videoEl = document.getElementById('video');
-                videoEl.srcObject = s;
-                videoEl.play();
-            })
-            .catch(err => {
-                alert("Gagal akses kamera. Pastikan izin kamera diberikan.");
-            });
+            navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1920 }, height: { ideal: 1080 } } })
+            .then(s => document.getElementById('video').srcObject = s);
         }
 
-        // PERBAIKAN UTAMA: Fungsi loadUserFrames dipanggil secara eksplisit
         function loadUserFrames() {
             const container = document.getElementById('user-frame-list');
-            if(!container) return;
-
-            // Bersihkan container dulu
-            container.innerHTML = '';
-            
-            // Tambahkan tombol Polos (Default)
-            const btnDefault = document.createElement('button');
-            btnDefault.id = "default-frame-btn";
-            btnDefault.innerText = "Polos";
-            btnDefault.className = currentFrame === 'default' ? 'active-opt' : '';
-            btnDefault.onclick = () => setFrame('default', btnDefault);
-            container.appendChild(btnDefault);
-
-            // Tambahkan tombol dari LocalStorage
+            container.innerHTML = '<button id="default-frame-btn" onclick="setFrame(\'default\', this)" class="active-opt">Polos</button>';
             const custom = JSON.parse(localStorage.getItem('custom_frames') || '[]');
             custom.forEach(f => {
                 const btn = document.createElement('button');
-                // Ambil 6 karakter nama file agar rapi di layar HP
-                btn.innerText = (f.name || "Frame").split('.')[0].substring(0,6);
-                btn.className = currentFrame === f.id ? 'active-opt' : '';
+                btn.innerText = f.name.split('.')[0].substring(0,6);
                 btn.onclick = () => setFrame(f.id, btn);
                 container.appendChild(btn);
             });
@@ -345,8 +308,6 @@
                     await new Promise(r => setTimeout(r, 1000));
                     count--;
                 }
-                cd.innerText = "SMILE! 📸";
-                await new Promise(r => setTimeout(r, 500));
                 cd.classList.add('hidden');
                 takeSnap();
                 await new Promise(r => setTimeout(r, 1000));
@@ -354,9 +315,11 @@
             createStrip();
         }
 
+        // --- SOLUSI KHUSUS LAPTOP: RE-DRAWING FILTER ---
         function takeSnap() {
             const video = document.getElementById('video');
             const canvas = document.createElement('canvas');
+            
             const targetWidth = 1440;
             const targetHeight = 1080;
             const targetRatio = targetWidth / targetHeight;
@@ -364,12 +327,15 @@
             canvas.width = targetWidth;
             canvas.height = targetHeight;
             const ctx = canvas.getContext('2d');
+            
+            // Step A: Terapkan Filter ke Kanvas
             ctx.filter = currentFilter;
 
             playSound('cekrek');
             document.getElementById('flash').style.opacity = '1';
             setTimeout(() => document.getElementById('flash').style.opacity = '0', 100);
 
+            // Step B: Mirroring & Gambar
             ctx.save();
             ctx.translate(canvas.width, 0); 
             ctx.scale(-1, 1);
@@ -391,9 +357,12 @@
                 sy = (sourceHeight - sHeight) / 2;
             }
 
+            // Gambarkan Frame Utama
             ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
             ctx.restore();
 
+            // Step C: PAKSA RE-RENDER (Trik Khusus Desktop Laptop)
+            // Kita membuat kanvas kedua untuk "mengunci" filter yang sudah digambar
             const finalCanvas = document.createElement('canvas');
             finalCanvas.width = targetWidth;
             finalCanvas.height = targetHeight;
@@ -448,11 +417,6 @@
             await _supabase.from('vouchers').update({ used: true, used_at: new Date().toLocaleTimeString() }).eq('code', activeVoucher);
             setTimeout(() => location.reload(), 1500);
         }
-
-        // Jalankan saat halaman siap
-        window.addEventListener('DOMContentLoaded', () => {
-            loadUserFrames();
-        });
     </script>
 </body>
 </html>
