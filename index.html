@@ -156,7 +156,6 @@
     </div>
 
     <script>
-        // --- UBAH BAGIAN INI DENGAN DATA SUPABASE ANDA ---
         const SUPABASE_URL = 'https://ukucdlkevgaxquspgive.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrdWNkbGtldmdheHF1c3BnaXZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2OTY5MjYsImV4cCI6MjA4ODI3MjkyNn0.TrPZR31Wriw--G-iQYjEHoJGkw6LW6C0OzF9rCGQBwQ';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -169,7 +168,6 @@
         let currentFrame = 'default';
         let activeVoucher = null;
 
-        // AUDIO ENGINE
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSound(type) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -195,7 +193,6 @@
             }
         }
 
-        // NAVIGATION
         function showAdminLogin() { switchScreen('screen-admin-login'); }
         function hideAdmin() { switchScreen('screen-voucher'); }
         function switchScreen(id) {
@@ -203,7 +200,6 @@
             document.getElementById(id).classList.remove('hidden');
         }
 
-        // ADMIN LOGIC
         function loginAdmin() {
             if(document.getElementById('admin-pin').value === ADMIN_PIN) {
                 switchScreen('screen-admin-panel');
@@ -227,21 +223,13 @@
             if(!db) return;
             const usedCount = db.filter(v => v.used).length;
             const frames = JSON.parse(localStorage.getItem('custom_frames') || '[]');
-
             document.getElementById('stat-total').innerText = db.length;
             document.getElementById('stat-used').innerText = usedCount;
             document.getElementById('stat-sessions').innerText = usedCount;
             document.getElementById('stat-income').innerText = (usedCount * HARGA_PER_SESI).toLocaleString('id-ID');
-
             const tbody = document.querySelector('#voucher-table tbody');
             tbody.innerHTML = db.map(v => `<tr><td>${v.code}</td><td>${v.used?'✅':'⏳'}</td><td>${v.used_at}</td></tr>`).join('');
-
-            document.getElementById('admin-frame-list').innerHTML = frames.map((f, i) => `
-                <div style="text-align:center; min-width:60px;">
-                    <img src="${f.data}" style="height:60px; border:1px solid #ddd;"><br>
-                    <button class="danger" onclick="deleteFrame(${i})" style="padding:2px 5px; font-size:9px;">Hapus</button>
-                </div>
-            `).join('');
+            document.getElementById('admin-frame-list').innerHTML = frames.map((f, i) => `<div style="text-align:center; min-width:60px;"><img src="${f.data}" style="height:60px; border:1px solid #ddd;"><br><button class="danger" onclick="deleteFrame(${i})" style="padding:2px 5px; font-size:9px;">Hapus</button></div>`).join('');
         }
 
         function uploadFrame() {
@@ -252,8 +240,7 @@
                 let frames = JSON.parse(localStorage.getItem('custom_frames') || '[]');
                 frames.push({ id: 'f'+Date.now(), name: file.name, data: e.target.result });
                 localStorage.setItem('custom_frames', JSON.stringify(frames));
-                renderAdmin();
-                loadUserFrames();
+                renderAdmin(); loadUserFrames();
             };
             reader.readAsDataURL(file);
         }
@@ -262,30 +249,21 @@
             let f = JSON.parse(localStorage.getItem('custom_frames') || '[]');
             f.splice(i, 1);
             localStorage.setItem('custom_frames', JSON.stringify(f));
-            renderAdmin();
-            loadUserFrames();
+            renderAdmin(); loadUserFrames();
         }
 
         async function resetAllData() { 
             if(confirm("Hapus semua data di Cloud?")) { 
                 await _supabase.from('vouchers').delete().neq('code', ''); 
-                localStorage.clear(); 
-                location.reload(); 
+                localStorage.clear(); location.reload(); 
             } 
         }
 
-        // USER LOGIC
         async function validateVoucher() {
             const input = document.getElementById('voucher-input').value.toUpperCase();
             const { data: v } = await _supabase.from('vouchers').select('*').eq('code', input).eq('used', false).single();
-            if (v) {
-                activeVoucher = input;
-                switchScreen('screen-camera');
-                loadUserFrames();
-                startCamera();
-            } else {
-                document.getElementById('voucher-msg').innerText = "Voucher tidak valid!";
-            }
+            if (v) { activeVoucher = input; switchScreen('screen-camera'); loadUserFrames(); startCamera(); }
+            else { document.getElementById('voucher-msg').innerText = "Voucher tidak valid!"; }
         }
 
         function startCamera() {
@@ -326,8 +304,7 @@
                 const cd = document.getElementById('countdown');
                 cd.classList.remove('hidden');
                 while(count > 0) {
-                    cd.innerText = count;
-                    playSound('tit');
+                    cd.innerText = count; playSound('tit');
                     await new Promise(r => setTimeout(r, 1000));
                     count--;
                 }
@@ -338,7 +315,7 @@
             createStrip();
         }
 
-        // --- PERBAIKAN STABILITAS FILTER UNTUK LAPTOP & HP ---
+        // --- SOLUSI KHUSUS LAPTOP: RE-DRAWING FILTER ---
         function takeSnap() {
             const video = document.getElementById('video');
             const canvas = document.createElement('canvas');
@@ -351,23 +328,18 @@
             canvas.height = targetHeight;
             const ctx = canvas.getContext('2d');
             
-            // 1. Membersihkan canvas & menerapkan filter secara eksplisit (Fix Laptop)
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Step A: Terapkan Filter ke Kanvas
             ctx.filter = currentFilter;
-
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
 
             playSound('cekrek');
             document.getElementById('flash').style.opacity = '1';
             setTimeout(() => document.getElementById('flash').style.opacity = '0', 100);
 
-            // 2. Simpan State & Mirroring
+            // Step B: Mirroring & Gambar
             ctx.save();
             ctx.translate(canvas.width, 0); 
             ctx.scale(-1, 1);
             
-            // Logika Crop Center
             const sourceWidth = video.videoWidth;
             const sourceHeight = video.videoHeight;
             const sourceRatio = sourceWidth / sourceHeight;
@@ -385,13 +357,19 @@
                 sy = (sourceHeight - sHeight) / 2;
             }
 
-            // 3. Gambar video ke canvas
+            // Gambarkan Frame Utama
             ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
-            
-            // 4. Restore state canvas (Fix filter bertumpuk)
             ctx.restore();
 
-            photos.push(canvas.toDataURL('image/jpeg', 1.0));
+            // Step C: PAKSA RE-RENDER (Trik Khusus Desktop Laptop)
+            // Kita membuat kanvas kedua untuk "mengunci" filter yang sudah digambar
+            const finalCanvas = document.createElement('canvas');
+            finalCanvas.width = targetWidth;
+            finalCanvas.height = targetHeight;
+            const finalCtx = finalCanvas.getContext('2d');
+            finalCtx.drawImage(canvas, 0, 0);
+
+            photos.push(finalCanvas.toDataURL('image/jpeg', 1.0));
         }
 
         function createStrip() {
@@ -436,11 +414,7 @@
             link.download = 'photostrip_' + activeVoucher + '.jpg';
             link.href = canvas.toDataURL('image/jpeg', 1.0);
             link.click();
-            
-            await _supabase.from('vouchers')
-                .update({ used: true, used_at: new Date().toLocaleTimeString() })
-                .eq('code', activeVoucher);
-            
+            await _supabase.from('vouchers').update({ used: true, used_at: new Date().toLocaleTimeString() }).eq('code', activeVoucher);
             setTimeout(() => location.reload(), 1500);
         }
     </script>
