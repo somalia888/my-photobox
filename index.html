@@ -81,13 +81,14 @@
 
         .active-opt { border: 3px solid; border-image: var(--btn-gradient) 1; border-radius: 12px; box-shadow: 0 0 10px var(--vibrant-pink); }
         
-        /* PERBAIKAN: CSS Canvas agar tidak gepeng di HP */
+        /* SOLUSI KUNCI AGAR TIDAK GEPENG */
         #output-canvas {
-            width: 100%;
-            max-width: 280px; 
-            height: auto;
-            aspect-ratio: 1200 / 3800; /* Menjaga rasio strip tetap 1200x3800 */
-            object-fit: contain; 
+            display: block;
+            margin: 0 auto;
+            width: auto;           /* Lebar otomatis menyesuaikan tinggi */
+            max-width: 100%;       /* Tidak boleh lebih lebar dari layar */
+            max-height: 70vh;      /* KUNCI: Batasi tinggi agar tidak ditarik paksa oleh HP */
+            height: auto;          /* Jaga proporsi asli */
             border: 5px solid white;
             border-radius: 10px;
             box-shadow: 0 10px 20px rgba(0,0,0,0.2);
@@ -137,7 +138,7 @@
                         </div>
                     </div>
                     <div>
-                        <small><b>2. Pilih Frame (Geser):</b></small>
+                        <small><b>2. Pilih Frame:</b></small>
                         <div id="user-frame-list" class="frame-group"></div>
                     </div>
                     <button id="start-btn" class="main-btn" onclick="startSequence()" style="height:60px; font-size: 16px;">📸 AMBIL FOTO (4X)</button>
@@ -147,10 +148,12 @@
 
         <section id="screen-result" class="hidden" style="text-align: center;">
             <h1>Hasil Foto ✨</h1>
-            <canvas id="output-canvas"></canvas>
+            <div style="background: rgba(0,0,0,0.05); padding: 20px; border-radius: 20px;">
+                <canvas id="output-canvas"></canvas>
+            </div>
             <div style="margin-top: 15px; display: flex; gap: 10px;">
                 <button class="main-btn" style="flex:1" onclick="downloadStrip()">Download</button>
-                <button onclick="location.reload()">Selesai</button>
+                <button onclick="location.reload()" style="flex:1">Selesai</button>
             </div>
         </section>
 
@@ -287,40 +290,40 @@
         function takeSnap() {
             const video = document.getElementById('video');
             const canvas = document.createElement('canvas');
-            canvas.width = 1024; canvas.height = 768;
+            // Tetap gunakan resolusi tinggi untuk hasil capture
+            canvas.width = 1200; canvas.height = 900; 
             const ctx = canvas.getContext('2d');
             document.getElementById('flash').style.opacity = '1';
             setTimeout(() => document.getElementById('flash').style.opacity = '0', 100);
             ctx.filter = currentFilter;
             ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            photos.push(canvas.toDataURL('image/jpeg', 0.8));
+            photos.push(canvas.toDataURL('image/jpeg', 0.9));
         }
 
-        /* PERBAIKAN: Fungsi createStrip dengan proporsi absolut agar tidak gepeng */
         function createStrip() {
             const canvas = document.getElementById('output-canvas');
             const ctx = canvas.getContext('2d');
             
-            // Set resolusi fisik canvas (1200x3800)
+            // RESOLUSI MASTER (Jangan Diubah)
             canvas.width = 1200; 
             canvas.height = 3800; 
 
             ctx.fillStyle = "#fff"; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            const sideMargin = 110;  
-            const topMargin = 120;   
-            const photoGap = 60;     
+            // Perhitungan Margin agar Foto Center
             const photoWidth = 980;  
             const photoHeight = 735; 
+            const sideMargin = (canvas.width - photoWidth) / 2; // Otomatis Center
+            const topMargin = 120;   
+            const photoGap = 60;     
 
             let loaded = 0;
             photos.forEach((src, i) => {
                 const img = new Image();
                 img.onload = () => {
                     const yPos = topMargin + (i * (photoHeight + photoGap));
-                    // Menggambar foto dengan ukuran tetap agar tidak gepeng
                     ctx.drawImage(img, sideMargin, yPos, photoWidth, photoHeight);
                     loaded++;
                     
@@ -329,7 +332,7 @@
                             const frameImg = new Image();
                             frameImg.crossOrigin = "anonymous";
                             frameImg.onload = () => { 
-                                // Gambar frame sebagai overlay (pastikan ukuran frame 1200x3800)
+                                // Overlay Frame menutupi seluruh canvas secara proporsional
                                 ctx.drawImage(frameImg, 0, 0, 1200, 3800); 
                                 switchScreen('screen-result'); 
                             };
@@ -347,7 +350,7 @@
             const canvas = document.getElementById('output-canvas');
             const link = document.createElement('a');
             link.download = `Photo_${activeVoucher}.jpg`;
-            link.href = canvas.toDataURL('image/jpeg', 0.9);
+            link.href = canvas.toDataURL('image/jpeg', 1.0); // Kualitas Maksimal
             link.click();
             await _supabase.from('vouchers').update({ used: true, used_at: new Date().toLocaleTimeString() }).eq('code', activeVoucher);
             setTimeout(() => location.reload(), 2000);
