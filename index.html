@@ -8,24 +8,14 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            /* Palette Rainbow Cerah */
             --vibrant-blue: #00d2ff;
             --vibrant-yellow: #ffeaa7;
             --vibrant-pink: #ff9ff3;
             --vibrant-purple: #a29bfe;
-            
-            /* Gradasi Latar Belakang Campur */
             --bg-gradient: linear-gradient(135deg, #00d2ff 0%, #ffeaa7 35%, #ff9ff3 70%, #a29bfe 100%);
-            
-            /* Gradasi untuk Tombol/Elemen Aktif */
             --btn-gradient: linear-gradient(135deg, #00d2ff 0%, #ff9ff3 50%, #a29bfe 100%);
-            
-            --danger: #ff7675;
-            --dark: #2d3436;
-            
-            /* Glassmorphism Effect */
             --glass: rgba(255, 255, 255, 0.85);
-            --shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            --dark: #2d3436;
         }
 
         * { font-family: 'Poppins', sans-serif; box-sizing: border-box; }
@@ -33,16 +23,10 @@
         body { 
             background: var(--bg-gradient);
             background-size: 400% 400%;
-            animation: gradientAnimation 15s ease infinite; /* Animasi gradasi bergerak pelan */
-            margin: 0; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh;
-            color: var(--dark);
+            animation: gradientAnimation 15s ease infinite;
+            margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh;
         }
 
-        /* Animasi Latar Belakang Bergerak */
         @keyframes gradientAnimation {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
@@ -50,99 +34,56 @@
         }
 
         .container { 
-            background: var(--glass); 
-            backdrop-filter: blur(20px);
-            padding: 30px; 
-            border-radius: 30px; 
-            box-shadow: var(--shadow); 
-            width: 95vw; 
-            max-width: 1000px; 
-            position: relative;
-            border: 1px solid rgba(255,255,255,0.5);
+            background: var(--glass); backdrop-filter: blur(20px);
+            padding: 30px; border-radius: 30px; width: 95vw; max-width: 1000px; 
+            position: relative; border: 1px solid rgba(255,255,255,0.5);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
         }
 
         .hidden { display: none !important; }
-        .nav-admin { position: absolute; top: 20px; right: 20px; font-size: 14px; cursor: pointer; color: #b2bec3; transition: 0.3s; }
-        .nav-admin:hover { color: #ff9ff3; } /* Pink on hover */
+        .nav-admin { position: absolute; top: 20px; right: 20px; font-size: 14px; cursor: pointer; color: #b2bec3; }
 
-        h1 { font-weight: 700; background: var(--btn-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 5px; }
-        p { color: #636e72; font-size: 14px; }
-
-        .camera-layout { display: flex; gap: 25px; flex-direction: row; align-items: flex-start; }
+        h1 { font-weight: 700; background: var(--btn-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0 0 10px 0; }
+        
+        .camera-layout { display: flex; gap: 20px; }
         @media (max-width: 768px) { .camera-layout { flex-direction: column; } }
 
         .camera-container { 
-            flex: 1.5;
-            position: relative; 
-            border-radius: 25px; 
-            overflow: hidden; 
-            background: #000; 
-            aspect-ratio: 4/3;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-            border: 5px solid white;
+            flex: 1.5; position: relative; border-radius: 20px; overflow: hidden; 
+            background: #000; aspect-ratio: 4/3; border: 5px solid white;
         }
 
         video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-
-        #countdown { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            font-size: 8rem; color: white; font-weight: 700; text-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            z-index: 10; 
-        }
-
+        #countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 8rem; color: white; font-weight: 700; z-index: 10; }
         #flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 20; opacity: 0; pointer-events: none; }
         
-        .sidebar-controls { flex: 1; display: flex; flex-direction: column; gap: 15px; width: 100%; }
+        .sidebar-controls { flex: 1; display: flex; flex-direction: column; gap: 15px; }
 
         button { 
-            padding: 14px; border: none; border-radius: 15px; cursor: pointer; 
-            font-weight: 600; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            background: #f1f2f6; color: #2d3436; font-size: 14px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-        
-        button:active { transform: scale(0.95); }
-
-        .main-btn { 
-            background: var(--btn-gradient); color: white; width: 100%; font-size: 16px; 
-            box-shadow: 0 8px 25px rgba(162, 155, 254, 0.4);
-        }
-        .main-btn:hover { background: linear-gradient(135deg, #00b8e6 0%, #e68ae6 50%, #8c84e6 100%); transform: translateY(-2px); }
-
-        .danger { background: var(--danger); color: white; }
-        
-        input { 
-            width: 100%; padding: 15px; margin: 15px 0; border: 2px solid #eee; 
-            border-radius: 15px; font-size: 16px; transition: 0.3s;
-        }
-        input:focus { border-color: var(--vibrant-pink); outline: none; }
-        
-        .filter-group, .frame-group { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
-        
-        /* Gaya Tombol Aktif Rainbow */
-        .active-opt { 
-            background: white !important; 
-            border: 3px solid;
-            border-image: var(--btn-gradient) 1;
-            border-radius: 15px; /* Sedikit trik untuk border-image round */
-            color: var(--dark);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 12px; border: none; border-radius: 12px; cursor: pointer; 
+            font-weight: 600; background: #f1f2f6; transition: 0.3s;
         }
 
-        #output-canvas { 
-            width: 100%; max-width: 320px; border-radius: 20px; 
-            box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 8px solid white;
+        .main-btn { background: var(--btn-gradient); color: white; box-shadow: 0 5px 15px rgba(162, 155, 254, 0.4); }
+        
+        .filter-group, .frame-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
+        
+        /* Thumbnail Style */
+        .frame-thumb-btn {
+            background: white !important; padding: 8px; border: 2px solid transparent;
+            display: flex; flex-direction: column; align-items: center; width: 70px;
         }
 
-        /* Stats & Table Admin */
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-        .card { background: var(--dark); color: white; padding: 15px; border-radius: 20px; position: relative; overflow: hidden; }
-        .card::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: var(--btn-gradient); }
-        .card b { font-size: 18px; color: var(--vibrant-yellow); }
-        .scroll-table { border-radius: 15px; overflow: hidden; border: 1px solid #eee; margin-top: 15px; }
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th { background: #f8f9fa; padding: 12px; font-size: 11px; color: #b2bec3; text-transform: uppercase; }
-        td { padding: 12px; border-top: 1px solid #eee; font-size: 13px; }
+        .active-opt { border: 3px solid; border-image: var(--btn-gradient) 1; border-radius: 12px; }
+
+        .thumb-preview { width: 40px; height: 55px; border-radius: 4px; object-fit: cover; background: #eee; }
+
+        /* Admin Styles */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .card { background: var(--dark); color: white; padding: 15px; border-radius: 15px; border-bottom: 4px solid var(--vibrant-pink); }
+        .card b { color: var(--vibrant-yellow); font-size: 18px; }
+        
+        input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -151,12 +92,12 @@
         <div class="nav-admin" onclick="showAdminLogin()">⚙️ Admin Area</div>
 
         <section id="screen-voucher" style="text-align: center;">
-            <div style="font-size: 50px; margin-bottom: 10px;">📸</div>
-            <h1>Rainbow Studio</h1>
-            <p>Ready for your best shots? Enter your voucher code below.</p>
-            <input type="text" id="voucher-input" placeholder="CODE-1234" maxlength="8" style="text-transform: uppercase; text-align: center; letter-spacing: 2px; font-weight: 700;">
-            <button class="main-btn" onclick="validateVoucher()">START PHOTOGRAPHY</button>
-            <p id="voucher-msg" style="color:var(--danger); font-weight: 500;"></p>
+            <div style="font-size: 50px;">📸</div>
+            <h1>Rainbow Photobox</h1>
+            <p>Masukkan kode voucher untuk memulai sesi foto Anda.</p>
+            <input type="text" id="voucher-input" placeholder="MASUKKAN KODE" style="text-align:center; font-weight:700; text-transform:uppercase;">
+            <button class="main-btn" style="width:100%" onclick="validateVoucher()">MULAI FOTO</button>
+            <p id="voucher-msg" style="color:red; font-size:12px;"></p>
         </section>
 
         <section id="screen-camera" class="hidden">
@@ -169,7 +110,7 @@
 
                 <div class="sidebar-controls">
                     <div>
-                        <span style="font-size: 13px; font-weight: 600; color: #b2bec3;">Visual Filters</span>
+                        <small>Pilih Filter:</small>
                         <div class="filter-group">
                             <button onclick="setFilter('none', this)" class="active-opt">Normal</button>
                             <button onclick="setFilter('grayscale(100%)', this)">B&W</button>
@@ -178,78 +119,63 @@
                     </div>
                     
                     <div>
-                        <span style="font-size: 13px; font-weight: 600; color: #b2bec3;">Custom Frames</span>
+                        <small>Pilih Frame:</small>
                         <div id="user-frame-list" class="frame-group">
                             </div>
                     </div>
 
-                    <button id="start-btn" class="main-btn" onclick="startSequence()" style="margin-top: 10px; height: 60px;">📸 AMBIL FOTO (4X)</button>
+                    <button id="start-btn" class="main-btn" onclick="startSequence()" style="height:60px;">📸 AMBIL FOTO (4X)</button>
                 </div>
             </div>
         </section>
 
         <section id="screen-result" class="hidden" style="text-align: center;">
-            <h2> amazing! ✨</h2>
-            <p>Your photos are ready to be saved.</p>
-            <canvas id="output-canvas"></canvas>
-            <div style="margin-top: 20px; display: flex; gap: 10px;">
-                <button onclick="downloadStrip()" class="main-btn">Download Image</button>
-                <button onclick="location.reload()" style="flex: 0.5;">New Session</button>
+            <h1>Hasil Foto ✨</h1>
+            <canvas id="output-canvas" style="width:100%; max-width:280px; border: 5px solid white; border-radius:15px;"></canvas>
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <button class="main-btn" style="flex:1" onclick="downloadStrip()">Download</button>
+                <button onclick="location.reload()">Selesai</button>
             </div>
-        </section>
-
-        <section id="screen-admin-login" class="hidden" style="max-width: 400px; margin: auto; text-align: center;">
-            <h3>Admin Access</h3>
-            <input type="password" id="admin-pin" placeholder="••••">
-            <button class="main-btn" onclick="loginAdmin()">LOGIN</button>
-            <button onclick="hideAdmin()" style="width:100%; margin-top:10px; background: none;">Cancel</button>
         </section>
 
         <section id="screen-admin-panel" class="hidden">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="margin:0;">Admin Dashboard</h2>
-                <button onclick="hideAdmin()" style="padding: 5px 15px; font-size: 12px;">Close</button>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2>Admin Dashboard</h2>
+                <button onclick="hideAdmin()">Keluar</button>
             </div>
             
             <div class="stats-grid">
-                <div class="card">Vouchers<br><b id="stat-total">0</b></div>
-                <div class="card">Revenue<br><b>Rp </b><b id="stat-income">0</b></div>
+                <div class="card">Total Voucher<br><b id="stat-total">0</b></div>
+                <div class="card">Pendapatan<br><b>Rp </b><b id="stat-income">0</b></div>
             </div>
 
-            <div style="background: white; padding: 20px; border-radius: 20px; border: 1px solid #eee;">
-                <p style="margin: 0 0 10px 0; font-weight: 600;">Upload New Frame (.PNG)</p>
-                <div style="display: flex; gap: 10px;">
-                    <input type="file" id="frame-upload" accept="image/png" style="margin:0; font-size: 12px; padding: 10px;">
-                    <button id="upload-btn" onclick="uploadFrame()" style="background: var(--btn-gradient); color: white;">Upload</button>
-                </div>
-                <div id="admin-frame-list" style="display:flex; gap:10px; overflow-x:auto; padding: 15px 0;"></div>
+            <div style="background:#fff; padding:15px; border-radius:15px; margin-bottom:15px;">
+                <small>Upload Frame Baru (.PNG):</small>
+                <input type="file" id="frame-upload" accept="image/png">
+                <button id="upload-btn" class="main-btn" style="width:100%" onclick="uploadFrame()">Upload ke Cloud</button>
             </div>
 
-            <div style="margin-top: 20px;">
-                <div style="display:flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: 600;">Voucher Codes</span>
-                    <div style="display: flex; gap: 5px;">
-                        <input type="number" id="gen-qty" value="5" style="width:60px; margin:0; padding: 5px;">
-                        <button onclick="generateVouchers()" style="padding: 5px 15px; background: var(--btn-gradient); color: white;">Generate</button>
-                    </div>
-                </div>
-                <div class="scroll-table">
-                    <table id="voucher-table">
-                        <thead><tr><th>Code</th><th>Status</th><th>Used At</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
+            <div style="max-height: 200px; overflow-y: auto; background:white; border-radius:15px;">
+                <table style="width:100%; font-size:12px; border-collapse:collapse;">
+                    <thead style="background:#eee;"><tr><th style="padding:10px;">Kode</th><th>Status</th></tr></thead>
+                    <tbody id="voucher-table-body"></tbody>
+                </table>
             </div>
+            <button onclick="generateVouchers()" style="width:100%; margin-top:10px;">+ Generate 5 Voucher</button>
+        </section>
+
+        <section id="screen-admin-login" class="hidden" style="text-align:center;">
+            <h3>Admin PIN</h3>
+            <input type="password" id="admin-pin" placeholder="****" style="text-align:center;">
+            <button class="main-btn" style="width:100%" onclick="loginAdmin()">Masuk</button>
         </section>
     </div>
 
     <script>
+        // KONFIGURASI SUPABASE (Sesuai tangkapan layar Anda)
         const SUPABASE_URL = 'https://ukucdlkevgaxquspgive.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrdWNkbGtldmdheHF1c3BnaXZlIiwicm9sZSI6ImFub24}bC4iOnEsImV4cCI6MjA4ODI3MjkyNn0.TrPZR31Wriw--G-iQYjEHoJGkw6LW6C0OzF9rCGQBwQ'; // Perhatikan Key ini agak aneh di paste, pastikan full key Anda
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrdWNkbGtldmdheHF1c3BnaXZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2OTY5MjYsImV4cCI6MjA4ODI3MjkyNn0.TrPZR31Wriw--G-iQYjEHoJGkw6LW6C0OzF9rCGQBwQ';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        const ADMIN_PIN = "1234";
-        const HARGA_PER_SESI = 15000;
 
         let photos = [];
         let cloudFrames = [];
@@ -264,9 +190,8 @@
 
         function showAdminLogin() { switchScreen('screen-admin-login'); }
         function hideAdmin() { switchScreen('screen-voucher'); }
-        
         function loginAdmin() {
-            if(document.getElementById('admin-pin').value === ADMIN_PIN) {
+            if(document.getElementById('admin-pin').value === "1234") {
                 switchScreen('screen-admin-panel');
                 renderAdmin();
             } else { alert("PIN Salah!"); }
@@ -284,24 +209,18 @@
             container.innerHTML = '';
             
             // Tombol Polos
-            const btnDefault = document.createElement('button');
-            btnDefault.innerHTML = `<div style="width: 40px; height: 55px; border: 2px dashed #ccc; border-radius: 4px; display: flex; align-items: center; justify-content: center; margin: auto;"><span style="font-size: 10px; color: #999;">Polos</span></div>`;
-            btnDefault.className = currentFrame === 'default' ? 'active-opt' : '';
-            btnDefault.onclick = () => setFrame('default', btnDefault);
-            container.appendChild(btnDefault);
+            const btnPolos = document.createElement('button');
+            btnPolos.className = 'frame-thumb-btn ' + (currentFrame === 'default' ? 'active-opt' : '');
+            btnPolos.innerHTML = `<div class="thumb-preview" style="border:1px dashed #ccc; display:flex; align-items:center; justify-content:center; font-size:8px; color:#999;">Polos</div><span style="font-size:9px; margin-top:4px;">None</span>`;
+            btnPolos.onclick = () => { currentFrame = 'default'; loadUserFrames(); };
+            container.appendChild(btnPolos);
 
-            // Thumbnail Frame
+            // Tombol Frame dari Cloud
             cloudFrames.forEach(f => {
                 const btn = document.createElement('button');
-                btn.innerHTML = `
-                    <div style="position: relative; width: 40px; height: 55px; margin: auto;">
-                        <img src="${f.url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
-                    </div>
-                    <span style="display: block; font-size: 9px; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55px;">${f.name.split('.')[0]}</span>
-                `;
-                btn.className = currentFrame === f.url ? 'active-opt' : '';
-                btn.style.minWidth = "70px";
-                btn.onclick = () => setFrame(f.url, btn);
+                btn.className = 'frame-thumb-btn ' + (currentFrame === f.url ? 'active-opt' : '');
+                btn.innerHTML = `<img src="${f.url}" class="thumb-preview"><span style="font-size:9px; margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width:100%;">${f.name.split('.')[0]}</span>`;
+                btn.onclick = () => { currentFrame = f.url; loadUserFrames(); };
                 container.appendChild(btn);
             });
         }
@@ -310,39 +229,55 @@
             const file = document.getElementById('frame-upload').files[0];
             const btn = document.getElementById('upload-btn');
             if(!file) return alert("Pilih file PNG!");
-            btn.disabled = true; btn.innerText = "...";
+            
+            btn.disabled = true; btn.innerText = "Mengunggah...";
             const fileName = `frame_${Date.now()}.png`;
-            const { error: storageError } = await _supabase.storage.from('frames-bucket').upload(fileName, file);
-            if (storageError) { alert(storageError.message); btn.disabled = false; return; }
+
+            // 1. Upload ke Storage (Pastikan nama bucket: frames-bucket)
+            const { data: uploadData, error: storageError } = await _supabase.storage
+                .from('frames-bucket')
+                .upload(fileName, file);
+
+            if (storageError) {
+                alert("Error Upload: " + storageError.message);
+                btn.disabled = false; btn.innerText = "Upload ke Cloud";
+                return;
+            }
+
+            // 2. Ambil Public URL
             const { data: { publicUrl } } = _supabase.storage.from('frames-bucket').getPublicUrl(fileName);
+
+            // 3. Simpan link ke Tabel frames
             await _supabase.from('frames').insert([{ name: file.name, url: publicUrl }]);
-            btn.disabled = false; btn.innerText = "Upload";
-            renderAdmin(); fetchFrames();
+
+            alert("Berhasil Upload!");
+            btn.disabled = false; btn.innerText = "Upload ke Cloud";
+            fetchFrames(); renderAdmin();
         }
 
         async function validateVoucher() {
-            const input = document.getElementById('voucher-input').value.toUpperCase();
-            const { data: v } = await _supabase.from('vouchers').select('*').eq('code', input).eq('used', false).single();
-            if (v) { activeVoucher = input; await fetchFrames(); switchScreen('screen-camera'); startCamera(); }
-            else { document.getElementById('voucher-msg').innerText = "Voucher invalid!"; }
+            const code = document.getElementById('voucher-input').value.toUpperCase();
+            const { data: v } = await _supabase.from('vouchers').select('*').eq('code', code).eq('used', false).single();
+            if(v) {
+                activeVoucher = code;
+                await fetchFrames();
+                switchScreen('screen-camera');
+                startCamera();
+            } else {
+                document.getElementById('voucher-msg').innerText = "Voucher tidak valid atau sudah dipakai!";
+            }
         }
 
         function startCamera() {
-            navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080, facingMode: "user" } })
-            .then(s => { document.getElementById('video').srcObject = s; })
-            .catch(() => alert("Kamera Error"));
+            navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720, facingMode: "user" } })
+            .then(stream => { document.getElementById('video').srcObject = stream; })
+            .catch(() => alert("Kamera tidak ditemukan!"));
         }
 
         function setFilter(f, btn) {
             currentFilter = f;
             document.getElementById('video').style.filter = f;
             document.querySelectorAll('.filter-group button').forEach(b => b.classList.remove('active-opt'));
-            btn.classList.add('active-opt');
-        }
-
-        function setFrame(f, btn) {
-            currentFrame = f;
-            document.querySelectorAll('.frame-group button').forEach(b => b.classList.remove('active-opt'));
             btn.classList.add('active-opt');
         }
 
@@ -355,7 +290,8 @@
                 cd.classList.remove('hidden');
                 while(count > 0) { cd.innerText = count; await new Promise(r => setTimeout(r, 1000)); count--; }
                 cd.classList.add('hidden');
-                takeSnap(); await new Promise(r => setTimeout(r, 800));
+                takeSnap();
+                await new Promise(r => setTimeout(r, 800));
             }
             createStrip();
         }
@@ -363,14 +299,16 @@
         function takeSnap() {
             const video = document.getElementById('video');
             const canvas = document.createElement('canvas');
-            canvas.width = 1440; canvas.height = 1080;
+            canvas.width = 1024; canvas.height = 768;
             const ctx = canvas.getContext('2d');
+            
             document.getElementById('flash').style.opacity = '1';
             setTimeout(() => document.getElementById('flash').style.opacity = '0', 100);
+
             ctx.filter = currentFilter;
             ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            photos.push(canvas.toDataURL('image/jpeg', 0.9));
+            photos.push(canvas.toDataURL('image/jpeg', 0.8));
         }
 
         function createStrip() {
@@ -378,59 +316,57 @@
             const ctx = canvas.getContext('2d');
             canvas.width = 1200; canvas.height = 3600;
             ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+
             let loaded = 0;
             photos.forEach((src, i) => {
-                const img = new Image(); img.crossOrigin = "anonymous";
+                const img = new Image();
                 img.onload = () => {
                     ctx.drawImage(img, 90, 120 + (i * 840), 1020, 765);
-                    loaded++; if(loaded === 4) applyOverlay(ctx);
+                    loaded++;
+                    if(loaded === 4) {
+                        if(currentFrame !== 'default') {
+                            const frameImg = new Image();
+                            frameImg.crossOrigin = "anonymous";
+                            frameImg.onload = () => { ctx.drawImage(frameImg, 0, 0, 1200, 3600); switchScreen('screen-result'); };
+                            frameImg.src = currentFrame;
+                        } else {
+                            ctx.strokeStyle = "#eee"; ctx.lineWidth = 40; ctx.strokeRect(40, 40, 1120, 3520);
+                            switchScreen('screen-result');
+                        }
+                    }
                 };
                 img.src = src;
             });
-        }
-
-        function applyOverlay(ctx) {
-            if(currentFrame !== 'default') {
-                const img = new Image(); img.crossOrigin = "anonymous";
-                img.onload = () => { ctx.drawImage(img, 0, 0, 1200, 3600); switchScreen('screen-result'); };
-                img.src = currentFrame;
-            } else {
-                ctx.strokeStyle = "#eee"; ctx.lineWidth = 40; ctx.strokeRect(40, 40, 1120, 3520);
-                switchScreen('screen-result');
-            }
         }
 
         async function downloadStrip() {
             const canvas = document.getElementById('output-canvas');
             const link = document.createElement('a');
             link.download = `Photo_${activeVoucher}.jpg`;
-            link.href = canvas.toDataURL('image/jpeg', 1.0);
+            link.href = canvas.toDataURL('image/jpeg', 0.9);
             link.click();
             await _supabase.from('vouchers').update({ used: true, used_at: new Date().toLocaleTimeString() }).eq('code', activeVoucher);
-            setTimeout(() => location.reload(), 1000);
+            setTimeout(() => location.reload(), 2000);
         }
 
         async function renderAdmin() {
-            const { data: db } = await _supabase.from('vouchers').select('*').order('created_at', { ascending: false });
-            if(db) {
-                const usedCount = db.filter(v => v.used).length;
-                document.getElementById('stat-total').innerText = db.length;
-                document.getElementById('stat-income').innerText = (usedCount * HARGA_PER_SESI).toLocaleString('id-ID');
-                document.querySelector('#voucher-table tbody').innerHTML = db.map(v => `<tr><td>${v.code}</td><td>${v.used?'✅':'⏳'}</td><td>${v.used_at}</td></tr>`).join('');
+            const { data } = await _supabase.from('vouchers').select('*').order('created_at', { ascending: false });
+            if(data) {
+                const used = data.filter(v => v.used).length;
+                document.getElementById('stat-total').innerText = data.length;
+                document.getElementById('stat-income').innerText = (used * 15000).toLocaleString('id-ID');
+                document.getElementById('voucher-table-body').innerHTML = data.map(v => `<tr><td style="padding:8px;">${v.code}</td><td>${v.used ? '✅' : '⏳'}</td></tr>`).join('');
             }
-            const { data: fList } = await _supabase.from('frames').select('*');
-            document.getElementById('admin-frame-list').innerHTML = (fList || []).map(f => `<img src="${f.url}" style="height:60px; border-radius:5px; border:1px solid #eee;">`).join('');
         }
 
         async function generateVouchers() {
-            const qty = document.getElementById('gen-qty').value;
             const codes = [];
-            for(let i=0; i<qty; i++) codes.push({ code: Math.random().toString(36).substring(2, 8).toUpperCase(), used: false, used_at: '-' });
+            for(let i=0; i<5; i++) codes.push({ code: Math.random().toString(36).substring(2, 8).toUpperCase(), used: false });
             await _supabase.from('vouchers').insert(codes);
             renderAdmin();
         }
 
-        window.addEventListener('load', fetchFrames);
+        window.onload = fetchFrames;
     </script>
 </body>
 </html>
