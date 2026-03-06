@@ -68,7 +68,6 @@
         
         .filter-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
 
-        /* MODIFIKASI TAMPILAN PEMILIHAN FRAME */
         .frame-group { 
             display: flex; flex-wrap: nowrap; gap: 12px; margin-top: 5px; 
             overflow-x: auto; padding: 10px 5px; scrollbar-width: thin;
@@ -82,7 +81,19 @@
 
         .active-opt { border: 3px solid; border-image: var(--btn-gradient) 1; border-radius: 12px; box-shadow: 0 0 10px var(--vibrant-pink); }
         
-        /* Thumbnail Full Frame (Vertical Strip) */
+        /* PERBAIKAN: CSS Canvas agar tidak gepeng di HP */
+        #output-canvas {
+            width: 100%;
+            max-width: 280px; 
+            height: auto;
+            aspect-ratio: 1200 / 3800; /* Menjaga rasio strip tetap 1200x3800 */
+            object-fit: contain; 
+            border: 5px solid white;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            background: white;
+        }
+
         .thumb-preview { 
             width: 70px; height: 220px; border-radius: 4px; 
             object-fit: contain; background: #f8f8f8; border: 1px solid #eee;
@@ -136,7 +147,7 @@
 
         <section id="screen-result" class="hidden" style="text-align: center;">
             <h1>Hasil Foto ✨</h1>
-            <canvas id="output-canvas" style="width:100%; max-width:260px; border: 5px solid white; border-radius:10px; box-shadow: 0 10px 20px rgba(0,0,0,0.2);"></canvas>
+            <canvas id="output-canvas"></canvas>
             <div style="margin-top: 15px; display: flex; gap: 10px;">
                 <button class="main-btn" style="flex:1" onclick="downloadStrip()">Download</button>
                 <button onclick="location.reload()">Selesai</button>
@@ -286,18 +297,18 @@
             photos.push(canvas.toDataURL('image/jpeg', 0.8));
         }
 
-        // FUNGSI UTAMA UNTUK LEBAR BORDER & FOOTER
+        /* PERBAIKAN: Fungsi createStrip dengan proporsi absolut agar tidak gepeng */
         function createStrip() {
             const canvas = document.getElementById('output-canvas');
             const ctx = canvas.getContext('2d');
             
+            // Set resolusi fisik canvas (1200x3800)
             canvas.width = 1200; 
-            canvas.height = 3800; // Tinggi ekstra untuk area desain bawah
+            canvas.height = 3800; 
 
             ctx.fillStyle = "#fff"; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // KONFIGURASI MARGIN LEBAR (Sesuai Permintaan)
             const sideMargin = 110;  
             const topMargin = 120;   
             const photoGap = 60;     
@@ -309,6 +320,7 @@
                 const img = new Image();
                 img.onload = () => {
                     const yPos = topMargin + (i * (photoHeight + photoGap));
+                    // Menggambar foto dengan ukuran tetap agar tidak gepeng
                     ctx.drawImage(img, sideMargin, yPos, photoWidth, photoHeight);
                     loaded++;
                     
@@ -317,6 +329,7 @@
                             const frameImg = new Image();
                             frameImg.crossOrigin = "anonymous";
                             frameImg.onload = () => { 
+                                // Gambar frame sebagai overlay (pastikan ukuran frame 1200x3800)
                                 ctx.drawImage(frameImg, 0, 0, 1200, 3800); 
                                 switchScreen('screen-result'); 
                             };
