@@ -3,46 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Photobox Pro - Cloud Sync</title>
+    <title>Photobox Pro - Modern Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --primary: #6c5ce7; --danger: #ff7675; --dark: #2d3436; --light: #f9f9f9; }
-        body { font-family: 'Segoe UI', sans-serif; background: #dfe6e9; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .container { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 95vw; max-width: 900px; position: relative; box-sizing: border-box; }
+        :root {
+            --primary: #6c5ce7;
+            --primary-soft: #a29bfe;
+            --danger: #ff7675;
+            --dark: #2d3436;
+            --bg-gradient: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+            --glass: rgba(255, 255, 255, 0.9);
+            --shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        * { font-family: 'Poppins', sans-serif; box-sizing: border-box; }
+        
+        body { 
+            background: var(--bg-gradient);
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh;
+            color: var(--dark);
+        }
+
+        .container { 
+            background: var(--glass); 
+            backdrop-filter: blur(15px);
+            padding: 30px; 
+            border-radius: 30px; 
+            box-shadow: var(--shadow); 
+            width: 95vw; 
+            max-width: 1000px; 
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
         .hidden { display: none !important; }
-        .nav-admin { position: absolute; top: 15px; right: 15px; font-size: 12px; cursor: pointer; color: #aaa; z-index: 100; }
-        .camera-layout { display: flex; gap: 20px; flex-direction: row; }
+        .nav-admin { position: absolute; top: 20px; right: 20px; font-size: 14px; cursor: pointer; color: #b2bec3; transition: 0.3s; }
+        .nav-admin:hover { color: var(--primary); }
+
+        h1 { font-weight: 700; color: var(--primary); margin-bottom: 5px; }
+        p { color: #636e72; font-size: 14px; }
+
+        /* CAMERA STYLING */
+        .camera-layout { display: flex; gap: 25px; flex-direction: row; align-items: flex-start; }
         @media (max-width: 768px) { .camera-layout { flex-direction: column; } }
-        .camera-container { flex: 2; position: relative; border-radius: 15px; overflow: hidden; background: #000; aspect-ratio: 4/3; }
+
+        .camera-container { 
+            flex: 1.5;
+            position: relative; 
+            border-radius: 25px; 
+            overflow: hidden; 
+            background: #000; 
+            aspect-ratio: 4/3;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            border: 5px solid white;
+        }
+
         video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        #countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 6rem; color: white; font-weight: bold; z-index: 10; }
+
+        #countdown { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            font-size: 8rem; color: white; font-weight: 700; text-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            z-index: 10; 
+        }
+
         #flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 20; opacity: 0; pointer-events: none; }
-        .sidebar-controls { flex: 1; display: flex; flex-direction: column; gap: 10px; }
-        button { padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; transition: 0.2s; background: #eee; }
-        .main-btn { background: var(--primary); color: white; width: 100%; font-size: 16px; }
+        
+        /* CONTROLS */
+        .sidebar-controls { flex: 1; display: flex; flex-direction: column; gap: 15px; width: 100%; }
+
+        button { 
+            padding: 14px; border: none; border-radius: 15px; cursor: pointer; 
+            font-weight: 600; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            background: #f1f2f6; color: #2d3436; font-size: 14px;
+        }
+        
+        button:active { transform: scale(0.95); }
+
+        .main-btn { 
+            background: var(--primary); color: white; width: 100%; font-size: 16px; 
+            box-shadow: 0 8px 20px rgba(108, 92, 231, 0.3);
+        }
+        .main-btn:hover { background: #5b4bc4; transform: translateY(-2px); }
+
         .danger { background: var(--danger); color: white; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; text-align: center; }
-        .filter-group, .frame-group { display: flex; flex-wrap: wrap; gap: 5px; margin: 5px 0; }
-        .active-opt { border: 2px solid var(--primary) !important; background: #e8e7ff; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .card { background: var(--dark); color: white; padding: 10px; border-radius: 10px; font-size: 12px; }
-        .scroll-table { max-height: 200px; overflow-y: auto; border: 1px solid #eee; margin-top: 10px;}
-        table { width: 100%; font-size: 11px; border-collapse: collapse; }
-        th, td { padding: 6px; border-bottom: 1px solid #eee; text-align: center; }
-        canvas { width: 100%; max-width: 300px; display: block; margin: 10px auto; border-radius: 10px; border: 1px solid #ddd; }
+        
+        input { 
+            width: 100%; padding: 15px; margin: 15px 0; border: 2px solid #eee; 
+            border-radius: 15px; font-size: 16px; transition: 0.3s;
+        }
+        input:focus { border-color: var(--primary); outline: none; }
+        
+        .filter-group, .frame-group { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        
+        .filter-group button, .frame-group button { 
+            flex: 1; min-width: 80px; font-size: 12px; border: 2px solid transparent; 
+        }
+
+        .active-opt { 
+            background: white !important; 
+            border: 2px solid var(--primary) !important; 
+            color: var(--primary);
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.1);
+        }
+
+        /* RESULT SCREEN */
+        #output-canvas { 
+            width: 100%; max-width: 320px; border-radius: 20px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 8px solid white;
+        }
+
+        /* ADMIN PANEL STYLING */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .card { background: var(--dark); color: white; padding: 15px; border-radius: 20px; }
+        .card b { font-size: 18px; color: var(--primary-soft); }
+
+        .scroll-table { border-radius: 15px; overflow: hidden; border: 1px solid #eee; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th { background: #f8f9fa; padding: 12px; font-size: 12px; color: #b2bec3; text-transform: uppercase; }
+        td { padding: 12px; border-top: 1px solid #eee; font-size: 13px; }
+
+        #admin-frame-list img { transition: 0.3s; cursor: pointer; }
+        #admin-frame-list img:hover { transform: scale(1.1); }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <div class="nav-admin" onclick="showAdminLogin()">⚙️ Admin</div>
+        <div class="nav-admin" onclick="showAdminLogin()">⚙️ Admin Area</div>
 
-        <section id="screen-voucher">
-            <h1 style="margin:0; text-align: center;">📸 Photobox</h1>
-            <p style="text-align: center;">Masukkan kode voucher Anda</p>
-            <input type="text" id="voucher-input" placeholder="Ketik Kode Di Sini" maxlength="8" style="text-transform: uppercase;">
-            <button class="main-btn" onclick="validateVoucher()">MULAI FOTO</button>
-            <p id="voucher-msg" style="color:red; font-size:13px; text-align: center;"></p>
+        <section id="screen-voucher" style="text-align: center;">
+            <div style="font-size: 50px; margin-bottom: 10px;">📸</div>
+            <h1>Photobox Studio</h1>
+            <p>Ready for your best shots? Enter your voucher code below.</p>
+            <input type="text" id="voucher-input" placeholder="CODE-1234" maxlength="8" style="text-transform: uppercase; text-align: center; letter-spacing: 2px; font-weight: 700;">
+            <button class="main-btn" onclick="validateVoucher()">START PHOTOGRAPHY</button>
+            <p id="voucher-msg" style="color:var(--danger); font-weight: 500;"></p>
         </section>
 
         <section id="screen-camera" class="hidden">
@@ -52,60 +152,84 @@
                     <div id="countdown" class="hidden">3</div>
                     <div id="flash"></div>
                 </div>
+
                 <div class="sidebar-controls">
-                    <div style="font-size:12px; font-weight: bold;">Filter:</div>
-                    <div class="filter-group">
-                        <button onclick="setFilter('none', this)" class="active-opt">Normal</button>
-                        <button onclick="setFilter('grayscale(100%)', this)">B&W</button>
-                        <button onclick="setFilter('sepia(100%)', this)">Sepia</button>
+                    <div>
+                        <span style="font-size: 13px; font-weight: 600; color: #b2bec3;">Visual Filters</span>
+                        <div class="filter-group">
+                            <button onclick="setFilter('none', this)" class="active-opt">Normal</button>
+                            <button onclick="setFilter('grayscale(100%)', this)">B&W</button>
+                            <button onclick="setFilter('sepia(100%)', this)">Vintage</button>
+                        </div>
                     </div>
-                    <div style="font-size:12px; font-weight: bold;">Frame (Cloud):</div>
-                    <div id="user-frame-list" class="frame-group">Memuat frame...</div>
-                    <button id="start-btn" class="main-btn" onclick="startSequence()">AMBIL FOTO (4x)</button>
+                    
+                    <div>
+                        <span style="font-size: 13px; font-weight: 600; color: #b2bec3;">Custom Frames</span>
+                        <div id="user-frame-list" class="frame-group">
+                            <button class="active-opt">Loading...</button>
+                        </div>
+                    </div>
+
+                    <button id="start-btn" class="main-btn" onclick="startSequence()" style="margin-top: 10px; height: 60px;">📸 SHUTTER (4X)</button>
                 </div>
             </div>
         </section>
 
-        <section id="screen-result" class="hidden">
-            <h3 style="text-align:center">Selesai! ✨</h3>
+        <section id="screen-result" class="hidden" style="text-align: center;">
+            <h2 style="margin: 0;">Amazing! ✨</h2>
+            <p>Your photos are ready to be saved.</p>
             <canvas id="output-canvas"></canvas>
-            <button onclick="downloadStrip()" class="main-btn">Download & Simpan</button>
-            <button onclick="location.reload()" style="width:100%; margin-top:10px">Kembali</button>
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button onclick="downloadStrip()" class="main-btn">Download Image</button>
+                <button onclick="location.reload()" style="flex: 0.5;">New Session</button>
+            </div>
         </section>
 
-        <section id="screen-admin-login" class="hidden">
+        <section id="screen-admin-login" class="hidden" style="max-width: 400px; margin: auto; text-align: center;">
             <h3>Admin Access</h3>
-            <input type="password" id="admin-pin" placeholder="Masukkan PIN">
-            <button class="main-btn" onclick="loginAdmin()">Login</button>
-            <button onclick="hideAdmin()" style="width:100%; margin-top:10px">Batal</button>
+            <p>Security verification required.</p>
+            <input type="password" id="admin-pin" placeholder="••••">
+            <button class="main-btn" onclick="loginAdmin()">LOGIN</button>
+            <button onclick="hideAdmin()" style="width:100%; margin-top:10px; background: none;">Cancel</button>
         </section>
 
         <section id="screen-admin-panel" class="hidden">
-            <h2 style="margin-top:0">📊 Dashboard</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin:0">Admin Dashboard</h2>
+                <button onclick="hideAdmin()" style="padding: 5px 15px; font-size: 12px;">Close</button>
+            </div>
+            
             <div class="stats-grid">
-                <div class="card">Total: <b id="stat-total">0</b></div>
-                <div class="card">Terpakai: <b id="stat-used">0</b></div>
-                <div class="card">Sesi: <b id="stat-sessions">0</b></div>
-                <div class="card">Income: Rp <span id="stat-income">0</span></div>
+                <div class="card">Vouchers<br><b id="stat-total">0</b></div>
+                <div class="card">Revenue<br><b>Rp </b><b id="stat-income">0</b></div>
             </div>
-            <hr>
-            <p style="font-size: 11px; margin: 0;">Upload Frame ke Cloud (PNG):</p>
-            <input type="file" id="frame-upload" accept="image/png" style="font-size:10px">
-            <button id="upload-btn" onclick="uploadFrame()" style="width:100%; margin-bottom: 10px;">Upload ke Cloud</button>
-            <div id="admin-frame-list" style="display:flex; gap:5px; overflow-x:auto; padding-bottom:10px;"></div>
-            <hr>
-            <div style="display:flex; gap:5px">
-                <input type="number" id="gen-qty" value="5" style="width:60px; margin:0">
-                <button onclick="generateVouchers()" style="flex:1">Generate Voucher</button>
+
+            <div style="background: white; padding: 20px; border-radius: 20px; border: 1px solid #eee;">
+                <p style="margin: 0 0 10px 0; font-weight: 600;">Upload New Frame (.PNG)</p>
+                <div style="display: flex; gap: 10px;">
+                    <input type="file" id="frame-upload" accept="image/png" style="margin:0; font-size: 12px; padding: 10px;">
+                    <button id="upload-btn" onclick="uploadFrame()" style="background: var(--primary); color: white;">Upload</button>
+                </div>
+                <div id="admin-frame-list" style="display:flex; gap:10px; overflow-x:auto; padding: 15px 0;"></div>
             </div>
-            <div class="scroll-table">
-                <table id="voucher-table">
-                    <thead><tr><th>Kode</th><th>Status</th><th>Waktu</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+
+            <div style="margin-top: 20px;">
+                <div style="display:flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 600;">Voucher Codes</span>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="number" id="gen-qty" value="5" style="width:60px; margin:0; padding: 5px;">
+                        <button onclick="generateVouchers()" style="padding: 5px 15px; background: var(--primary); color: white;">Generate</button>
+                    </div>
+                </div>
+                <div class="scroll-table">
+                    <table id="voucher-table">
+                        <thead><tr><th>Code</th><th>Status</th><th>Used At</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
-            <button class="danger" onclick="resetAllData()" style="width:100%; margin-top:10px">RESET SEMUA DATA</button>
-            <button onclick="hideAdmin()" style="width:100%; margin-top:10px">Keluar</button>
+            
+            <button class="danger" onclick="resetAllData()" style="width:100%; margin-top:20px; opacity: 0.5;">Reset System Data</button>
         </section>
     </div>
 
@@ -161,37 +285,17 @@
             } else { alert("PIN Salah!"); }
         }
 
-        // --- CLOUD FRAME LOGIC ---
-
         async function uploadFrame() {
             const file = document.getElementById('frame-upload').files[0];
             const btn = document.getElementById('upload-btn');
             if(!file) return alert("Pilih file PNG!");
-            
-            btn.disabled = true;
-            btn.innerText = "Mengunggah...";
-
+            btn.disabled = true; btn.innerText = "...";
             const fileName = `frame_${Date.now()}.png`;
-            
-            // 1. Upload ke Storage
-            const { data: storageData, error: storageError } = await _supabase.storage
-                .from('frames-bucket')
-                .upload(fileName, file);
-
-            if (storageError) {
-                alert("Error Upload: " + storageError.message);
-                btn.disabled = false;
-                return;
-            }
-
-            // 2. Ambil Public URL
+            const { data: storageData, error: storageError } = await _supabase.storage.from('frames-bucket').upload(fileName, file);
+            if (storageError) { alert(storageError.message); btn.disabled = false; return; }
             const { data: { publicUrl } } = _supabase.storage.from('frames-bucket').getPublicUrl(fileName);
-
-            // 3. Simpan ke Database
             await _supabase.from('frames').insert([{ name: file.name, url: publicUrl }]);
-
-            btn.disabled = false;
-            btn.innerText = "Upload ke Cloud";
+            btn.disabled = false; btn.innerText = "Upload";
             renderAdmin();
         }
 
@@ -213,15 +317,11 @@
             const container = document.getElementById('user-frame-list');
             if(!container) return;
             container.innerHTML = '';
-            
-            // Polos
             const btnDefault = document.createElement('button');
             btnDefault.innerText = "Polos";
             btnDefault.className = currentFrame === 'default' ? 'active-opt' : '';
             btnDefault.onclick = () => setFrame('default', btnDefault);
             container.appendChild(btnDefault);
-
-            // Cloud Frames
             cloudFrames.forEach(f => {
                 const btn = document.createElement('button');
                 btn.innerText = f.name.split('.')[0].substring(0,6);
@@ -231,26 +331,19 @@
             });
         }
 
-        // --- VOUCHER & ADMIN ---
-
         async function renderAdmin() {
-            // Stats
             const { data: db } = await _supabase.from('vouchers').select('*').order('created_at', { ascending: false });
             if(db) {
                 const usedCount = db.filter(v => v.used).length;
                 document.getElementById('stat-total').innerText = db.length;
-                document.getElementById('stat-used').innerText = usedCount;
-                document.getElementById('stat-sessions').innerText = usedCount;
                 document.getElementById('stat-income').innerText = (usedCount * HARGA_PER_SESI).toLocaleString('id-ID');
                 document.querySelector('#voucher-table tbody').innerHTML = db.map(v => `<tr><td>${v.code}</td><td>${v.used?'✅':'⏳'}</td><td>${v.used_at}</td></tr>`).join('');
             }
-            
-            // Frames
             const { data: frames } = await _supabase.from('frames').select('*');
             document.getElementById('admin-frame-list').innerHTML = (frames || []).map(f => `
-                <div style="text-align:center; min-width:60px;">
-                    <img src="${f.url}" style="height:60px; border:1px solid #ddd; border-radius:5px;"><br>
-                    <button class="danger" onclick="deleteFrame(${f.id}, '${f.url}')" style="padding:2px 5px; font-size:9px;">Hapus</button>
+                <div style="text-align:center; min-width:80px;">
+                    <img src="${f.url}" style="height:80px; width:60px; object-fit:cover; border-radius:10px; border:1px solid #eee;"><br>
+                    <button class="danger" onclick="deleteFrame(${f.id}, '${f.url}')" style="padding:2px 8px; font-size:10px; margin-top:5px;">Hapus</button>
                 </div>
             `).join('');
         }
@@ -266,38 +359,17 @@
             renderAdmin();
         }
 
-        async function resetAllData() { 
-            if(confirm("PERINGATAN: Ini akan menghapus SEMUA voucher dan frame di Cloud!")) { 
-                await _supabase.from('vouchers').delete().neq('code', ''); 
-                const { data } = await _supabase.from('frames').select('*');
-                if(data.length > 0) {
-                    const files = data.map(f => f.url.split('/').pop());
-                    await _supabase.storage.from('frames-bucket').remove(files);
-                    await _supabase.from('frames').delete().neq('name', '');
-                }
-                location.reload(); 
-            } 
-        }
-
         async function validateVoucher() {
             const input = document.getElementById('voucher-input').value.toUpperCase();
             const { data: v } = await _supabase.from('vouchers').select('*').eq('code', input).eq('used', false).single();
-            if (v) { 
-                activeVoucher = input; 
-                await fetchFrames(); // Ambil frame terbaru dari cloud
-                switchScreen('screen-camera'); 
-                startCamera(); 
-            } else { 
-                document.getElementById('voucher-msg').innerText = "Voucher tidak valid atau sudah terpakai!"; 
-            }
+            if (v) { activeVoucher = input; await fetchFrames(); switchScreen('screen-camera'); startCamera(); }
+            else { document.getElementById('voucher-msg').innerText = "Voucher invalid!"; }
         }
-
-        // --- CAMERA & LOGIC ---
 
         function startCamera() {
             navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080, facingMode: "user" } })
             .then(s => { document.getElementById('video').srcObject = s; })
-            .catch(() => alert("Kamera tidak terdeteksi!"));
+            .catch(() => alert("Kamera Error"));
         }
 
         function setFilter(f, btn) {
@@ -320,14 +392,9 @@
                 let count = 3;
                 const cd = document.getElementById('countdown');
                 cd.classList.remove('hidden');
-                while(count > 0) {
-                    cd.innerText = count; playSound('tit');
-                    await new Promise(r => setTimeout(r, 1000));
-                    count--;
-                }
+                while(count > 0) { cd.innerText = count; playSound('tit'); await new Promise(r => setTimeout(r, 1000)); count--; }
                 cd.classList.add('hidden');
-                takeSnap();
-                await new Promise(r => setTimeout(r, 800));
+                takeSnap(); await new Promise(r => setTimeout(r, 800));
             }
             createStrip();
         }
@@ -337,11 +404,9 @@
             const canvas = document.createElement('canvas');
             canvas.width = 1440; canvas.height = 1080;
             const ctx = canvas.getContext('2d');
-            
             playSound('cekrek');
             document.getElementById('flash').style.opacity = '1';
             setTimeout(() => document.getElementById('flash').style.opacity = '0', 100);
-
             ctx.filter = currentFilter;
             ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -352,17 +417,13 @@
             const canvas = document.getElementById('output-canvas');
             const ctx = canvas.getContext('2d');
             canvas.width = 1200; canvas.height = 3600;
-            ctx.fillStyle = "#fff";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
+            ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
             let loaded = 0;
             photos.forEach((src, i) => {
-                const img = new Image();
-                img.crossOrigin = "anonymous"; // Penting untuk gambar dari cloud
+                const img = new Image(); img.crossOrigin = "anonymous";
                 img.onload = () => {
                     ctx.drawImage(img, 90, 120 + (i * 840), 1020, 765);
-                    loaded++;
-                    if(loaded === 4) applyOverlay(ctx);
+                    loaded++; if(loaded === 4) applyOverlay(ctx);
                 };
                 img.src = src;
             });
@@ -370,16 +431,11 @@
 
         function applyOverlay(ctx) {
             if(currentFrame !== 'default') {
-                const img = new Image();
-                img.crossOrigin = "anonymous";
-                img.onload = () => {
-                    ctx.drawImage(img, 0, 0, 1200, 3600);
-                    switchScreen('screen-result');
-                };
+                const img = new Image(); img.crossOrigin = "anonymous";
+                img.onload = () => { ctx.drawImage(img, 0, 0, 1200, 3600); switchScreen('screen-result'); };
                 img.src = currentFrame;
             } else {
-                ctx.strokeStyle = "#000"; ctx.lineWidth = 30;
-                ctx.strokeRect(30, 30, 1140, 3540);
+                ctx.strokeStyle = "#eee"; ctx.lineWidth = 40; ctx.strokeRect(40, 40, 1120, 3520);
                 switchScreen('screen-result');
             }
         }
@@ -387,14 +443,13 @@
         async function downloadStrip() {
             const canvas = document.getElementById('output-canvas');
             const link = document.createElement('a');
-            link.download = `photo_${activeVoucher}.jpg`;
+            link.download = `PhotoBooth_${activeVoucher}.jpg`;
             link.href = canvas.toDataURL('image/jpeg', 1.0);
             link.click();
             await _supabase.from('vouchers').update({ used: true, used_at: new Date().toLocaleTimeString() }).eq('code', activeVoucher);
             setTimeout(() => location.reload(), 1000);
         }
 
-        // Inisialisasi awal
         window.addEventListener('load', fetchFrames);
     </script>
 </body>
