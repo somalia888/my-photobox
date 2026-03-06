@@ -35,7 +35,7 @@
 
         .container { 
             background: var(--glass); backdrop-filter: blur(20px);
-            padding: 30px; border-radius: 30px; width: 95vw; max-width: 1000px; 
+            padding: 30px; border-radius: 30px; width: 95vw; max-width: 1100px; 
             position: relative; border: 1px solid rgba(255,255,255,0.5);
             box-shadow: 0 15px 35px rgba(0,0,0,0.1);
         }
@@ -45,11 +45,11 @@
 
         h1 { font-weight: 700; background: var(--btn-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0 0 10px 0; }
         
-        .camera-layout { display: flex; gap: 20px; }
+        .camera-layout { display: flex; gap: 20px; align-items: flex-start; }
         @media (max-width: 768px) { .camera-layout { flex-direction: column; } }
 
         .camera-container { 
-            flex: 1.5; position: relative; border-radius: 20px; overflow: hidden; 
+            flex: 1.8; position: relative; border-radius: 20px; overflow: hidden; 
             background: #000; aspect-ratio: 4/3; border: 5px solid white;
         }
 
@@ -57,7 +57,7 @@
         #countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 8rem; color: white; font-weight: 700; z-index: 10; }
         #flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 20; opacity: 0; pointer-events: none; }
         
-        .sidebar-controls { flex: 1; display: flex; flex-direction: column; gap: 15px; }
+        .sidebar-controls { flex: 1.2; display: flex; flex-direction: column; gap: 15px; }
 
         button { 
             padding: 12px; border: none; border-radius: 12px; cursor: pointer; 
@@ -66,15 +66,27 @@
 
         .main-btn { background: var(--btn-gradient); color: white; box-shadow: 0 5px 15px rgba(162, 155, 254, 0.4); }
         
-        .filter-group, .frame-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
+        .filter-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
+
+        /* MODIFIKASI TAMPILAN PEMILIHAN FRAME */
+        .frame-group { 
+            display: flex; flex-wrap: nowrap; gap: 12px; margin-top: 5px; 
+            overflow-x: auto; padding: 10px 5px; scrollbar-width: thin;
+        }
         
         .frame-thumb-btn {
-            background: white !important; padding: 8px; border: 2px solid transparent;
-            display: flex; flex-direction: column; align-items: center; width: 70px;
+            background: white !important; padding: 6px; border: 2px solid transparent;
+            display: flex; flex-direction: column; align-items: center; 
+            min-width: 90px; flex-shrink: 0; border-radius: 12px;
         }
 
-        .active-opt { border: 3px solid; border-image: var(--btn-gradient) 1; border-radius: 12px; }
-        .thumb-preview { width: 40px; height: 55px; border-radius: 4px; object-fit: cover; background: #eee; }
+        .active-opt { border: 3px solid; border-image: var(--btn-gradient) 1; border-radius: 12px; box-shadow: 0 0 10px var(--vibrant-pink); }
+        
+        /* Thumbnail Full Frame (Vertical Strip) */
+        .thumb-preview { 
+            width: 70px; height: 220px; border-radius: 4px; 
+            object-fit: contain; background: #f8f8f8; border: 1px solid #eee;
+        }
 
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .card { background: var(--dark); color: white; padding: 15px; border-radius: 15px; border-bottom: 4px solid var(--vibrant-pink); }
@@ -90,7 +102,7 @@
 
         <section id="screen-voucher" style="text-align: center;">
             <div style="font-size: 50px;">📸</div>
-            <h1>SNAPMATICS</h1>
+            <h1>Rainbow Photobox</h1>
             <p>Masukkan kode voucher untuk memulai sesi foto Anda.</p>
             <input type="text" id="voucher-input" placeholder="MASUKKAN KODE" style="text-align:center; font-weight:700; text-transform:uppercase;">
             <button class="main-btn" style="width:100%" onclick="validateVoucher()">MULAI FOTO</button>
@@ -106,7 +118,7 @@
                 </div>
                 <div class="sidebar-controls">
                     <div>
-                        <small>Pilih Filter:</small>
+                        <small><b>1. Pilih Filter:</b></small>
                         <div class="filter-group">
                             <button onclick="setFilter('none', this)" class="active-opt">Normal</button>
                             <button onclick="setFilter('grayscale(100%)', this)">B&W</button>
@@ -114,10 +126,10 @@
                         </div>
                     </div>
                     <div>
-                        <small>Pilih Frame:</small>
+                        <small><b>2. Pilih Frame (Geser):</b></small>
                         <div id="user-frame-list" class="frame-group"></div>
                     </div>
-                    <button id="start-btn" class="main-btn" onclick="startSequence()" style="height:60px;">📸 AMBIL FOTO (4X)</button>
+                    <button id="start-btn" class="main-btn" onclick="startSequence()" style="height:60px; font-size: 16px;">📸 AMBIL FOTO (4X)</button>
                 </div>
             </div>
         </section>
@@ -199,7 +211,7 @@
             
             const btnPolos = document.createElement('button');
             btnPolos.className = 'frame-thumb-btn ' + (currentFrame === 'default' ? 'active-opt' : '');
-            btnPolos.innerHTML = `<div class="thumb-preview" style="border:1px dashed #ccc; display:flex; align-items:center; justify-content:center; font-size:8px; color:#999;">Polos</div><span style="font-size:9px; margin-top:4px;">None</span>`;
+            btnPolos.innerHTML = `<div class="thumb-preview" style="border:1px dashed #ccc; display:flex; align-items:center; justify-content:center; font-size:10px; color:#999;">POLOS</div><span style="font-size:9px; margin-top:4px;">None</span>`;
             btnPolos.onclick = () => { currentFrame = 'default'; loadUserFrames(); };
             container.appendChild(btnPolos);
 
@@ -274,24 +286,23 @@
             photos.push(canvas.toDataURL('image/jpeg', 0.8));
         }
 
-        // FUNGSI UTAMA UNTUK LEBAR BORDER
+        // FUNGSI UTAMA UNTUK LEBAR BORDER & FOOTER
         function createStrip() {
             const canvas = document.getElementById('output-canvas');
             const ctx = canvas.getContext('2d');
             
-            // Ukuran Canvas Utama
             canvas.width = 1200; 
-            canvas.height = 3800; // Ditambah tinggi untuk area bawah (footer)
+            canvas.height = 3800; // Tinggi ekstra untuk area desain bawah
 
             ctx.fillStyle = "#fff"; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // KONFIGURASI MARGIN (Pembaruan di sini)
-            const sideMargin = 110;  // Margin Kanan & Kiri lebih lebar
-            const topMargin = 120;   // Jarak dari atas
-            const photoGap = 60;     // Jarak antar foto vertikal
-            const photoWidth = 980;  // Lebar foto (Canvas Width - 2*sideMargin)
-            const photoHeight = 735; // Tinggi foto (Aspect Ratio 4:3)
+            // KONFIGURASI MARGIN LEBAR (Sesuai Permintaan)
+            const sideMargin = 110;  
+            const topMargin = 120;   
+            const photoGap = 60;     
+            const photoWidth = 980;  
+            const photoHeight = 735; 
 
             let loaded = 0;
             photos.forEach((src, i) => {
@@ -311,10 +322,6 @@
                             };
                             frameImg.src = currentFrame;
                         } else {
-                            // Border bantu jika tanpa frame
-                            ctx.strokeStyle = "#f0f0f0"; 
-                            ctx.lineWidth = 10;
-                            ctx.strokeRect(20, 20, 1160, 3760);
                             switchScreen('screen-result');
                         }
                     }
