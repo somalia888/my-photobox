@@ -3,18 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Photobox Pro - Modern Edition</title>
+    <title>Photobox Pro - Blue Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --primary: #6c5ce7;
-            --primary-soft: #a29bfe;
+            /* Palette Biru Baru */
+            --primary: #0984e3;      /* Biru cerah */
+            --primary-soft: #74b9ff; /* Biru muda */
+            --primary-dark: #0056b3; /* Biru tua */
             --danger: #ff7675;
             --dark: #2d3436;
-            --bg-gradient: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
-            --glass: rgba(255, 255, 255, 0.9);
-            --shadow: 0 10px 30px rgba(0,0,0,0.1);
+            --bg-gradient: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            --glass: rgba(255, 255, 255, 0.92);
+            --shadow: 0 10px 30px rgba(9, 132, 227, 0.2);
         }
 
         * { font-family: 'Poppins', sans-serif; box-sizing: border-box; }
@@ -38,7 +40,7 @@
             width: 95vw; 
             max-width: 1000px; 
             position: relative;
-            border: 1px solid rgba(255,255,255,0.3);
+            border: 1px solid rgba(255,255,255,0.4);
         }
 
         .hidden { display: none !important; }
@@ -84,9 +86,9 @@
 
         .main-btn { 
             background: var(--primary); color: white; width: 100%; font-size: 16px; 
-            box-shadow: 0 8px 20px rgba(108, 92, 231, 0.3);
+            box-shadow: 0 8px 20px rgba(9, 132, 227, 0.3);
         }
-        .main-btn:hover { background: #5b4bc4; transform: translateY(-2px); }
+        .main-btn:hover { background: var(--primary-dark); transform: translateY(-2px); }
 
         .danger { background: var(--danger); color: white; }
         
@@ -99,10 +101,10 @@
         .filter-group, .frame-group { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
         
         .active-opt { 
-            background: white !important; 
+            background: #e1f5fe !important; 
             border: 2px solid var(--primary) !important; 
             color: var(--primary);
-            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.1);
+            box-shadow: 0 5px 15px rgba(9, 132, 227, 0.15);
         }
 
         #output-canvas { 
@@ -112,7 +114,7 @@
 
         /* Stats & Table Admin */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-        .card { background: var(--dark); color: white; padding: 15px; border-radius: 20px; }
+        .card { background: var(--dark); color: white; padding: 15px; border-radius: 20px; border-bottom: 4px solid var(--primary); }
         .card b { font-size: 18px; color: var(--primary-soft); }
         .scroll-table { border-radius: 15px; overflow: hidden; border: 1px solid #eee; margin-top: 15px; }
         table { width: 100%; border-collapse: collapse; background: white; }
@@ -127,7 +129,7 @@
 
         <section id="screen-voucher" style="text-align: center;">
             <div style="font-size: 50px; margin-bottom: 10px;">📸</div>
-            <h1>Photobox Studio</h1>
+            <h1 style="color: var(--primary);">BlueBox Studio</h1>
             <p>Ready for your best shots? Enter your voucher code below.</p>
             <input type="text" id="voucher-input" placeholder="CODE-1234" maxlength="8" style="text-transform: uppercase; text-align: center; letter-spacing: 2px; font-weight: 700;">
             <button class="main-btn" onclick="validateVoucher()">START PHOTOGRAPHY</button>
@@ -158,13 +160,13 @@
                             </div>
                     </div>
 
-                    <button id="start-btn" class="main-btn" onclick="startSequence()" style="margin-top: 10px; height: 60px;">📸 SHUTTER (4X)</button>
+                    <button id="start-btn" class="main-btn" onclick="startSequence()" style="margin-top: 10px; height: 60px;">📸 AMBIL FOTO (4X)</button>
                 </div>
             </div>
         </section>
 
         <section id="screen-result" class="hidden" style="text-align: center;">
-            <h2 style="margin: 0;">Amazing! ✨</h2>
+            <h2 style="margin: 0; color: var(--primary);">Amazing! ✨</h2>
             <p>Your photos are ready to be saved.</p>
             <canvas id="output-canvas"></canvas>
             <div style="margin-top: 20px; display: flex; gap: 10px;">
@@ -182,7 +184,7 @@
 
         <section id="screen-admin-panel" class="hidden">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="margin:0">Admin Dashboard</h2>
+                <h2 style="margin:0; color: var(--primary);">Admin Dashboard</h2>
                 <button onclick="hideAdmin()" style="padding: 5px 15px; font-size: 12px;">Close</button>
             </div>
             
@@ -232,7 +234,6 @@
         let currentFrame = 'default';
         let activeVoucher = null;
 
-        // --- CORE FUNCTIONS ---
         function switchScreen(id) {
             document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
@@ -248,7 +249,6 @@
             } else { alert("PIN Salah!"); }
         }
 
-        // --- CLOUD STORAGE FUNCTIONS ---
         async function fetchFrames() {
             const { data } = await _supabase.from('frames').select('*').order('id', { ascending: false });
             cloudFrames = data || [];
@@ -267,7 +267,7 @@
             btnDefault.onclick = () => setFrame('default', btnDefault);
             container.appendChild(btnDefault);
 
-            // Tombol Frame Thumbnail
+            // Thumbnail Frame
             cloudFrames.forEach(f => {
                 const btn = document.createElement('button');
                 btn.innerHTML = `
@@ -289,19 +289,14 @@
             if(!file) return alert("Pilih file PNG!");
             btn.disabled = true; btn.innerText = "...";
             const fileName = `frame_${Date.now()}.png`;
-            
             const { error: storageError } = await _supabase.storage.from('frames-bucket').upload(fileName, file);
             if (storageError) { alert(storageError.message); btn.disabled = false; return; }
-            
             const { data: { publicUrl } } = _supabase.storage.from('frames-bucket').getPublicUrl(fileName);
             await _supabase.from('frames').insert([{ name: file.name, url: publicUrl }]);
-            
             btn.disabled = false; btn.innerText = "Upload";
-            renderAdmin();
-            fetchFrames();
+            renderAdmin(); fetchFrames();
         }
 
-        // --- CAMERA & SHUTTER LOGIC ---
         async function validateVoucher() {
             const input = document.getElementById('voucher-input').value.toUpperCase();
             const { data: v } = await _supabase.from('vouchers').select('*').eq('code', input).eq('used', false).single();
@@ -392,7 +387,6 @@
             setTimeout(() => location.reload(), 1000);
         }
 
-        // --- ADMIN RENDER ---
         async function renderAdmin() {
             const { data: db } = await _supabase.from('vouchers').select('*').order('created_at', { ascending: false });
             if(db) {
