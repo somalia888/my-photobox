@@ -288,19 +288,52 @@
             createStrip();
         }
 
+        // --- PERBAIKAN: TAKE SNAP DENGAN CENTER CROP AGAR TIDAK GEPENG ---
         function takeSnap() {
             const video = document.getElementById('video');
-            const canvas = document.createElement('canvas');
-            canvas.width = 1200; canvas.height = 900; 
-            const ctx = canvas.getContext('2d');
+            const captureCanvas = document.createElement('canvas');
+            
+            // Kita kunci hasil tiap foto di 4:3 (1200x900)
+            captureCanvas.width = 1200; 
+            captureCanvas.height = 900; 
+            const ctx = captureCanvas.getContext('2d');
+
+            // Flash effect
             document.getElementById('flash').style.opacity = '1';
             setTimeout(() => document.getElementById('flash').style.opacity = '0', 100);
+
+            // Ukuran video asli (sensor)
+            const vW = video.videoWidth;
+            const vH = video.videoHeight;
+            const videoAspect = vW / vH;
+            const targetAspect = captureCanvas.width / captureCanvas.height;
+
+            let sx, sy, sWidth, sHeight;
+
+            // Logika Crop Center: Ambil bagian tengah sensor kamera
+            if (videoAspect > targetAspect) {
+                sHeight = vH;
+                sWidth = vH * targetAspect;
+                sx = (vW - sWidth) / 2;
+                sy = 0;
+            } else {
+                sWidth = vW;
+                sHeight = vW / targetAspect;
+                sx = 0;
+                sy = (vH - sHeight) / 2;
+            }
+
             ctx.filter = currentFilter;
-            ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            photos.push(canvas.toDataURL('image/jpeg', 0.9));
+            // Mirroring
+            ctx.translate(captureCanvas.width, 0);
+            ctx.scale(-1, 1);
+            
+            // Gambar bagian tengah sensor ke canvas capture
+            ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, captureCanvas.width, captureCanvas.height);
+            photos.push(captureCanvas.toDataURL('image/jpeg', 0.9));
         }
 
+        // --- PERBAIKAN: CREATE STRIP DENGAN GAMBAR YANG SUDAH TER-CROP ---
         function createStrip() {
             const canvas = document.getElementById('output-canvas');
             const ctx = canvas.getContext('2d');
@@ -311,11 +344,11 @@
             ctx.fillStyle = "#fff"; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            const photoWidth = 980;  
-            const photoHeight = 735; 
+            const photoWidth = 1000;   // Lebar foto di strip
+            const photoHeight = 750;  // Tinggi foto di strip (4:3)
             const sideMargin = (canvas.width - photoWidth) / 2;
-            const topMargin = 120;   
-            const photoGap = 60;     
+            const topMargin = 150;    
+            const photoGap = 60;      
 
             let loaded = 0;
             photos.forEach((src, i) => {
@@ -323,25 +356,8 @@
                 img.onload = () => {
                     const yPos = topMargin + (i * (photoHeight + photoGap));
                     
-                    // --- LOGIKA CROP CENTER ---
-                    const imgAspect = img.width / img.height;
-                    const targetAspect = photoWidth / photoHeight;
-                    let sx, sy, sWidth, sHeight;
-
-                    if (imgAspect > targetAspect) {
-                        sHeight = img.height;
-                        sWidth = img.height * targetAspect;
-                        sx = (img.width - sWidth) / 2;
-                        sy = 0;
-                    } else {
-                        sWidth = img.width;
-                        sHeight = img.width / targetAspect;
-                        sx = 0;
-                        sy = (img.height - sHeight) / 2;
-                    }
-
-                    ctx.drawImage(img, sx, sy, sWidth, sHeight, sideMargin, yPos, photoWidth, photoHeight);
-                    // --------------------------
+                    // Karena di takeSnap sudah di-crop sempurna, di sini tinggal tempel
+                    ctx.drawImage(img, sideMargin, yPos, photoWidth, photoHeight);
                     
                     loaded++;
                     if(loaded === 4) {
@@ -349,7 +365,7 @@
                             const frameImg = new Image();
                             frameImg.crossOrigin = "anonymous";
                             frameImg.onload = () => { 
-                                ctx.drawImage(frameImg, 0, 0, 1200, 3800); 
+                                ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height); 
                                 switchScreen('screen-result'); 
                             };
                             frameImg.src = currentFrame;
