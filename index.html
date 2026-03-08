@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Photobox Pro - Rainbow Edition</title>
+    <title>Snapmatics - Rainbow Photobox</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -81,14 +81,13 @@
 
         .active-opt { border: 3px solid; border-image: var(--btn-gradient) 1; border-radius: 12px; box-shadow: 0 0 10px var(--vibrant-pink); }
         
-        /* SOLUSI KUNCI AGAR TIDAK GEPENG */
         #output-canvas {
             display: block;
             margin: 0 auto;
-            width: auto;           /* Lebar otomatis menyesuaikan tinggi */
-            max-width: 100%;       /* Tidak boleh lebih lebar dari layar */
-            max-height: 70vh;      /* KUNCI: Batasi tinggi agar tidak ditarik paksa oleh HP */
-            height: auto;          /* Jaga proporsi asli */
+            width: auto;
+            max-width: 100%;
+            max-height: 70vh;
+            height: auto;
             border: 5px solid white;
             border-radius: 10px;
             box-shadow: 0 10px 20px rgba(0,0,0,0.2);
@@ -213,9 +212,11 @@
         }
 
         async function fetchFrames() {
-            const { data } = await _supabase.from('frames').select('*').order('id', { ascending: false });
-            cloudFrames = data || [];
-            loadUserFrames();
+            try {
+                const { data } = await _supabase.from('frames').select('*').order('id', { ascending: false });
+                cloudFrames = data || [];
+                loadUserFrames();
+            } catch (e) { console.error("Error fetching frames", e); }
         }
 
         function loadUserFrames() {
@@ -290,7 +291,6 @@
         function takeSnap() {
             const video = document.getElementById('video');
             const canvas = document.createElement('canvas');
-            // Tetap gunakan resolusi tinggi untuk hasil capture
             canvas.width = 1200; canvas.height = 900; 
             const ctx = canvas.getContext('2d');
             document.getElementById('flash').style.opacity = '1';
@@ -305,17 +305,15 @@
             const canvas = document.getElementById('output-canvas');
             const ctx = canvas.getContext('2d');
             
-            // RESOLUSI MASTER (Jangan Diubah)
             canvas.width = 1200; 
             canvas.height = 3800; 
 
             ctx.fillStyle = "#fff"; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Perhitungan Margin agar Foto Center
             const photoWidth = 980;  
             const photoHeight = 735; 
-            const sideMargin = (canvas.width - photoWidth) / 2; // Otomatis Center
+            const sideMargin = (canvas.width - photoWidth) / 2;
             const topMargin = 120;   
             const photoGap = 60;     
 
@@ -324,15 +322,33 @@
                 const img = new Image();
                 img.onload = () => {
                     const yPos = topMargin + (i * (photoHeight + photoGap));
-                    ctx.drawImage(img, sideMargin, yPos, photoWidth, photoHeight);
-                    loaded++;
                     
+                    // --- LOGIKA CROP CENTER ---
+                    const imgAspect = img.width / img.height;
+                    const targetAspect = photoWidth / photoHeight;
+                    let sx, sy, sWidth, sHeight;
+
+                    if (imgAspect > targetAspect) {
+                        sHeight = img.height;
+                        sWidth = img.height * targetAspect;
+                        sx = (img.width - sWidth) / 2;
+                        sy = 0;
+                    } else {
+                        sWidth = img.width;
+                        sHeight = img.width / targetAspect;
+                        sx = 0;
+                        sy = (img.height - sHeight) / 2;
+                    }
+
+                    ctx.drawImage(img, sx, sy, sWidth, sHeight, sideMargin, yPos, photoWidth, photoHeight);
+                    // --------------------------
+                    
+                    loaded++;
                     if(loaded === 4) {
                         if(currentFrame !== 'default') {
                             const frameImg = new Image();
                             frameImg.crossOrigin = "anonymous";
                             frameImg.onload = () => { 
-                                // Overlay Frame menutupi seluruh canvas secara proporsional
                                 ctx.drawImage(frameImg, 0, 0, 1200, 3800); 
                                 switchScreen('screen-result'); 
                             };
@@ -350,7 +366,7 @@
             const canvas = document.getElementById('output-canvas');
             const link = document.createElement('a');
             link.download = `Photo_${activeVoucher}.jpg`;
-            link.href = canvas.toDataURL('image/jpeg', 1.0); // Kualitas Maksimal
+            link.href = canvas.toDataURL('image/jpeg', 1.0);
             link.click();
             await _supabase.from('vouchers').update({ used: true, used_at: new Date().toLocaleTimeString() }).eq('code', activeVoucher);
             setTimeout(() => location.reload(), 2000);
