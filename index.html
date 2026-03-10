@@ -68,21 +68,19 @@
         
         .filter-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
 
-        /* --- PERBAIKAN: SCROLL KE BAWAH --- */
         .frame-group { 
             display: grid; 
-            grid-template-columns: repeat(3, 1fr); /* 3 Kolom */
+            grid-template-columns: repeat(3, 1fr); 
             gap: 12px; 
             margin-top: 5px; 
-            max-height: 350px; /* Batas tinggi kotak */
-            overflow-y: auto; /* Scroll Vertikal */
+            max-height: 350px; 
+            overflow-y: auto; 
             padding: 10px;
             background: rgba(255,255,255,0.4);
             border-radius: 15px;
             border: 1px solid rgba(0,0,0,0.05);
         }
 
-        /* Tampilan Mobile 2 Kolom */
         @media (max-width: 480px) {
             .frame-group { grid-template-columns: repeat(2, 1fr); }
         }
@@ -125,7 +123,6 @@
         
         input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; margin: 10px 0; }
         
-        /* Custom Scrollbar */
         .frame-group::-webkit-scrollbar { width: 6px; }
         .frame-group::-webkit-scrollbar-thumb { background: var(--vibrant-purple); border-radius: 10px; }
     </style>
@@ -162,8 +159,7 @@
                     </div>
                     <div>
                         <small><b>2. Pilih Frame:</b></small>
-                        <div id="user-frame-list" class="frame-group">
-                            </div>
+                        <div id="user-frame-list" class="frame-group"></div>
                     </div>
                     <button id="start-btn" class="main-btn" onclick="startSequence()" style="height:60px; font-size: 16px;">📸 AMBIL FOTO (4X)</button>
                 </div>
@@ -249,14 +245,12 @@
             if(!container) return;
             container.innerHTML = '';
             
-            // Tombol Polos
             const btnPolos = document.createElement('button');
             btnPolos.className = 'frame-thumb-btn ' + (currentFrame === 'default' ? 'active-opt' : '');
             btnPolos.innerHTML = `<div class="thumb-preview" style="border:1px dashed #ccc; display:flex; align-items:center; justify-content:center; font-size:10px; color:#999;">POLOS</div><span style="font-size:9px; margin-top:4px;">None</span>`;
             btnPolos.onclick = () => { currentFrame = 'default'; loadUserFrames(); };
             container.appendChild(btnPolos);
 
-            // List Frame dari Cloud
             cloudFrames.forEach(f => {
                 const btn = document.createElement('button');
                 btn.className = 'frame-thumb-btn ' + (currentFrame === f.url ? 'active-opt' : '');
@@ -289,7 +283,12 @@
 
         function startCamera() {
             navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720, facingMode: "user" } })
-            .then(stream => { document.getElementById('video').srcObject = stream; })
+            .then(stream => { 
+                const v = document.getElementById('video');
+                v.srcObject = stream; 
+                v.setAttribute('playsinline', true);
+                v.play();
+            })
             .catch(() => alert("Kamera tidak ditemukan!"));
         }
 
@@ -315,6 +314,7 @@
             createStrip();
         }
 
+        // PERBAIKAN UNTUK SAFARI (MACBOOK)
         function takeSnap() {
             const video = document.getElementById('video');
             const captureCanvas = document.createElement('canvas');
@@ -343,10 +343,17 @@
                 sy = (vH - sHeight) / 2;
             }
 
-            ctx.filter = currentFilter;
+            ctx.save(); // Simpan state awal
+            if (currentFilter !== 'none') {
+                ctx.filter = currentFilter; // Set filter di sini untuk Safari
+            }
             ctx.translate(captureCanvas.width, 0);
             ctx.scale(-1, 1);
+            
+            // Gambar video dengan filter terpasang
             ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, captureCanvas.width, captureCanvas.height);
+            ctx.restore(); // Kembalikan state
+
             photos.push(captureCanvas.toDataURL('image/jpeg', 0.9));
         }
 
