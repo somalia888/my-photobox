@@ -55,7 +55,7 @@
 
         video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         #countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 8rem; color: white; font-weight: 700; z-index: 10; }
-        #flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 20; opacity: 0; pointer-events: none; }
+        #flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.1s; }
         
         .sidebar-controls { flex: 1.2; display: flex; flex-direction: column; gap: 15px; width: 100%; }
 
@@ -65,6 +65,7 @@
         }
 
         .main-btn { background: var(--btn-gradient); color: white; box-shadow: 0 5px 15px rgba(162, 155, 254, 0.4); }
+        .main-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         
         .filter-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
 
@@ -172,9 +173,16 @@
                 <canvas id="output-canvas"></canvas>
             </div>
             <div style="margin-top: 15px; display: flex; gap: 10px;">
-                <button class="main-btn" style="flex:1" onclick="downloadStrip()">Download</button>
+                <button id="download-btn" class="main-btn" style="flex:1" onclick="downloadStrip()">Download</button>
                 <button onclick="location.reload()" style="flex:1">Selesai</button>
             </div>
+        </section>
+
+        <section id="screen-admin-login" class="hidden" style="text-align:center;">
+            <h3>Admin PIN</h3>
+            <input type="password" id="admin-pin" placeholder="****" style="text-align:center;">
+            <button class="main-btn" style="width:100%" onclick="loginAdmin()">Masuk</button>
+            <button onclick="hideAdmin()" style="width:100%; margin-top:10px; background:none;">Kembali</button>
         </section>
 
         <section id="screen-admin-panel" class="hidden">
@@ -199,12 +207,6 @@
             </div>
             <button onclick="generateVouchers()" style="width:100%; margin-top:10px;">+ Generate 5 Voucher</button>
         </section>
-
-        <section id="screen-admin-login" class="hidden" style="text-align:center;">
-            <h3>Admin PIN</h3>
-            <input type="password" id="admin-pin" placeholder="****" style="text-align:center;">
-            <button class="main-btn" style="width:100%" onclick="loginAdmin()">Masuk</button>
-        </section>
     </div>
 
     <script>
@@ -225,6 +227,7 @@
 
         function showAdminLogin() { switchScreen('screen-admin-login'); }
         function hideAdmin() { switchScreen('screen-voucher'); }
+        
         function loginAdmin() {
             if(document.getElementById('admin-pin').value === "2008") {
                 switchScreen('screen-admin-panel');
@@ -276,9 +279,16 @@
 
         async function validateVoucher() {
             const code = document.getElementById('voucher-input').value.toUpperCase();
+            if(!code) return;
             const { data: v } = await _supabase.from('vouchers').select('*').eq('code', code).eq('used', false).single();
-            if(v) { activeVoucher = code; await fetchFrames(); switchScreen('screen-camera'); startCamera(); }
-            else { document.getElementById('voucher-msg').innerText = "Voucher tidak valid!"; }
+            if(v) { 
+                activeVoucher = code; 
+                await fetchFrames(); 
+                switchScreen('screen-camera'); 
+                startCamera(); 
+            } else { 
+                document.getElementById('voucher-msg').innerText = "Voucher tidak valid atau sudah digunakan!"; 
+            }
         }
 
         function startCamera() {
@@ -286,7 +296,6 @@
             .then(stream => { 
                 const v = document.getElementById('video');
                 v.srcObject = stream; 
-                v.setAttribute('playsinline', true);
                 v.play();
             })
             .catch(() => alert("Kamera tidak ditemukan!"));
@@ -314,7 +323,6 @@
             createStrip();
         }
 
-        // PERBAIKAN UNTUK SAFARI (MACBOOK)
         function takeSnap() {
             const video = document.getElementById('video');
             const captureCanvas = document.createElement('canvas');
@@ -322,9 +330,12 @@
             captureCanvas.height = 900; 
             const ctx = captureCanvas.getContext('2d');
 
-            document.getElementById('flash').style.opacity = '1';
-            setTimeout(() => document.getElementById('flash').style.opacity = '0', 100);
+            // Flash effect
+            const flash = document.getElementById('flash');
+            flash.style.opacity = '1';
+            setTimeout(() => flash.style.opacity = '0', 100);
 
+            // Perhitungan Aspect Ratio
             const vW = video.videoWidth;
             const vH = video.videoHeight;
             const videoAspect = vW / vH;
@@ -343,18 +354,30 @@
                 sy = (vH - sHeight) / 2;
             }
 
-            ctx.save(); // Simpan state awal
-            if (currentFilter !== 'none') {
-                ctx.filter = currentFilter; // Set filter di sini untuk Safari
-            }
+            // PROSES BAKING FILTER (Perbaikan Utama)
+            ctx.save();
+            ctx.clearRect(0, 0, captureCanvas.width, captureCanvas.height);
+            
+            // Mirroring
             ctx.translate(captureCanvas.width, 0);
             ctx.scale(-1, 1);
-            
-            // Gambar video dengan filter terpasang
-            ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, captureCanvas.width, captureCanvas.height);
-            ctx.restore(); // Kembalikan state
 
-            photos.push(captureCanvas.toDataURL('image/jpeg', 0.9));
+            // Apply filter ke context SEBELUM drawImage
+            if (currentFilter !== 'none') {
+                ctx.filter = currentFilter;
+            } else {
+                ctx.filter = 'none';
+            }
+
+            // Gambar ke canvas
+            ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, captureCanvas.width, captureCanvas.height);
+            
+            // Reset filter agar tidak menumpuk di pengambilan berikutnya
+            ctx.filter = 'none';
+            ctx.restore();
+
+            // Masukkan hasil ke array
+            photos.push(captureCanvas.toDataURL('image/jpeg', 1.0));
         }
 
         function createStrip() {
@@ -379,6 +402,7 @@
                     const yPos = topMargin + (i * (photoHeight + photoGap));
                     ctx.drawImage(img, sideMargin, yPos, photoWidth, photoHeight);
                     loaded++;
+                    
                     if(loaded === 4) {
                         if(currentFrame !== 'default') {
                             const frameImg = new Image();
@@ -399,12 +423,29 @@
 
         async function downloadStrip() {
             const canvas = document.getElementById('output-canvas');
-            const link = document.createElement('a');
-            link.download = `Photo_${activeVoucher}.jpg`;
-            link.href = canvas.toDataURL('image/jpeg', 1.0);
-            link.click();
-            await _supabase.from('vouchers').update({ used: true, used_at: new Date().toLocaleTimeString() }).eq('code', activeVoucher);
-            setTimeout(() => location.reload(), 2000);
+            const btn = document.getElementById('download-btn');
+            btn.disabled = true;
+            btn.innerText = "Saving...";
+
+            try {
+                const link = document.createElement('a');
+                link.download = `Snapmatics_${activeVoucher}_${Date.now()}.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 1.0);
+                link.click();
+
+                // Update voucher di database
+                await _supabase.from('vouchers').update({ 
+                    used: true, 
+                    used_at: new Date().toISOString() 
+                }).eq('code', activeVoucher);
+
+                alert("Berhasil mengunduh! Sesi akan berakhir.");
+                setTimeout(() => location.reload(), 2000);
+            } catch (e) {
+                alert("Gagal menyimpan gambar.");
+                btn.disabled = false;
+                btn.innerText = "Download";
+            }
         }
 
         async function renderAdmin() {
