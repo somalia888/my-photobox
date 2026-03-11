@@ -133,14 +133,17 @@
     <div class="container">
         <div class="nav-admin" onclick="showAdminLogin()">⚙️ Admin Area</div>
 
-        <section id="screen-voucher" style="text-align: center;">
+        <section id="screen-welcome" style="text-align: center;">
             <div style="font-size: 50px;">📸</div>
             <h1>SNAPMATICS</h1>
-            <p>Klik tombol di bawah untuk memulai sesi foto Anda.</p>
+            <p>Selamat datang! Siapkan diri Anda untuk sesi foto yang menyenangkan.</p>
             <button class="main-btn" style="width:100%" onclick="startPhotoSession()">MULAI FOTO</button>
         </section>
 
-        <section id="screen-camera" class="hidden">
+        <section id="screen-camera" class="hidden" style="text-align: center;">
+            <div style="font-size: 30px;">📸</div>
+            <h1>SNAPMATICS</h1>
+            <p>Siap untuk berfoto!</p>
             <div class="camera-layout">
                 <div class="camera-container">
                     <video id="video" autoplay playsinline muted></video>
@@ -224,7 +227,7 @@
         }
 
         function showAdminLogin() { switchScreen('screen-admin-login'); }
-        function hideAdmin() { switchScreen('screen-voucher'); }
+        function hideAdmin() { switchScreen('screen-welcome'); }
         
         function loginAdmin() {
             if(document.getElementById('admin-pin').value === "2008") {
@@ -232,13 +235,22 @@
                 renderAdmin();
             } else { alert("PIN Salah!"); }
         }
-        
+
         async function fetchFrames() {
             try {
-                const { data } = await _supabase.from('frames').select('*').order('id', { ascending: false });
-                cloudFrames = data || [];
+                const { data, error } = await _supabase.from('frames').select('*').order('id', { ascending: false });
+                if(error) {
+                    console.error("Error fetching frames:", error);
+                    cloudFrames = [];
+                } else {
+                    cloudFrames = data || [];
+                }
                 loadUserFrames();
-            } catch (e) { console.error("Error fetching frames", e); }
+            } catch (e) { 
+                console.error("Error fetching frames", e); 
+                cloudFrames = [];
+                loadUserFrames();
+            }
         }
 
         function loadUserFrames() {
@@ -264,22 +276,98 @@
         async function uploadFrame() {
             const file = document.getElementById('frame-upload').files[0];
             const btn = document.getElementById('upload-btn');
-            if(!file) return alert("Pilih file PNG!");
-            btn.disabled = true; btn.innerText = "Mengunggah...";
+            
+            if(!file) return alert("Pilih file PNG terlebih dahulu!");
+            
+            // Validasi tipe file
+            if(file.type !== 'image/png') {
+                return alert("Hanya file PNG yang diizinkan!");
+            }
+            
+            // Validasi ukuran (maks 5MB)
+            if(file.size > 5 * 1024 * 1024) {
+                return alert("File terlalu besar! Maks 5MB.");
+            }
+            
+            btn.disabled = true; 
+            btn.innerText = "Mengunggah...";
+            
+            const bucketName = 'frames-bucket';
             const fileName = `frame_${Date.now()}.png`;
-            const { error: storageError } = await _supabase.storage.from('frames-bucket').upload(fileName, file);
-            if (storageError) { alert("Error: " + storageError.message); btn.disabled = false; return; }
-            const { data: { publicUrl } } = _supabase.storage.from('frames-bucket').getPublicUrl(fileName);
-            await _supabase.from('frames').insert([{ name: file.name, url: publicUrl }]);
-            btn.disabled = false; btn.innerText = "Upload ke Cloud";
-            fetchFrames(); renderAdmin();
+            
+            try {
+                // Langsung upload ke Storage (bucket sudah ada di Supabase Dashboard)
+                console.log("Mulai upload ke storage...");
+                btn.innerText = "Mengunggah... (1/2)";
+                
+                const { data: uploadData, error: storageError } = await _supabase.storage
+                    .from(bucketName)
+                    .upload(fileName, file, {
+                        cacheControl: '3600',
+                        upsert: false,
+                        contentType: 'image/png'
+                    });
+                
+                if(storageError) {
+                    console.error("Storage Error:", storageError);
+                    throw new Error("Gagal upload: " + storageError.message + "\n\nPastikan bucket 'frames-bucket' sudah dibuat public di Supabase!");
+                }
+                
+                console.log("Upload berhasil, mendapatkan URL...");
+                btn.innerText = "Mengunggah... (2/2)";
+                
+                // Get Public URL
+                const { data: urlData } = _supabase.storage
+                    .from(bucketName)
+                    .getPublicUrl(fileName);
+                
+                const publicUrl = urlData?.publicUrl;
+                console.log("Public URL:", publicUrl);
+                
+                if(!publicUrl) {
+                    throw new Error("Gagal mendapatkan URL publik!");
+                }
+                
+                // Insert ke Database
+                console.log("Menyimpan ke database...");
+                const { error: dbError } = await _supabase
+                    .from('frames')
+                    .insert([{ name: file.name, url: publicUrl }]);
+                
+                if(dbError) {
+                    console.error("Database Error:", dbError);
+                    throw new Error("Gagal simpan ke database: " + dbError.message);
+                }
+                
+                // Success
+                btn.disabled = false; 
+                btn.innerText = "Upload ke Cloud";
+                alert("Frame berhasil diupload!");
+                
+                // Refresh data
+                fetchFrames(); 
+                renderAdmin();
+                
+            } catch (error) {
+                console.error("Error lengkap:", error);
+                btn.disabled = false; 
+                btn.innerText = "Upload ke Cloud";
+                alert("Error: " + error.message);
+            }
         }
 
-        function startPhotoSession() {
-            activeVoucher = 'GUEST_' + Date.now();
-            fetchFrames(); 
-            switchScreen('screen-camera'); 
-            startCamera(); 
+        async function validateVoucher() {
+            const code = document.getElementById('voucher-input').value.toUpperCase();
+            if(!code) return;
+            const { data: v } = await _supabase.from('vouchers').select('*').eq('code', code).eq('used', false).single();
+            if(v) { 
+                activeVoucher = code; 
+                await fetchFrames(); 
+                switchScreen('screen-camera'); 
+                startCamera(); 
+            } else { 
+                document.getElementById('voucher-msg').innerText = "Voucher tidak valid atau sudah digunakan!"; 
+            }
         }
 
         function startCamera() {
@@ -294,7 +382,9 @@
 
         function setFilter(f, btn) {
             currentFilter = f;
-            document.getElementById('video').style.filter = f;
+            const video = document.getElementById('video');
+            video.style.filter = f;
+            video.style.webkitFilter = f; // Safari support
             document.querySelectorAll('.filter-group button').forEach(b => b.classList.remove('active-opt'));
             btn.classList.add('active-opt');
         }
@@ -356,8 +446,10 @@
             // Apply filter ke context SEBELUM drawImage
             if (currentFilter !== 'none') {
                 ctx.filter = currentFilter;
+                ctx.webkitFilter = currentFilter; // Safari support
             } else {
                 ctx.filter = 'none';
+                ctx.webkitFilter = 'none';
             }
 
             // Gambar ke canvas
@@ -365,6 +457,7 @@
             
             // Reset filter agar tidak menumpuk di pengambilan berikutnya
             ctx.filter = 'none';
+            ctx.webkitFilter = 'none';
             ctx.restore();
 
             // Masukkan hasil ke array
@@ -383,14 +476,16 @@
             const photoWidth = 1000;
             const photoHeight = 750;
             const sideMargin = (canvas.width - photoWidth) / 2;
-            const topMargin = 110;
-            const photoGap = 50;
+            const topMargin = 80;
+            const photoGap = 60;      
 
             let loaded = 0;
             photos.forEach((src, i) => {
                 const img = new Image();
                 img.onload = () => {
-                    const yPos = topMargin + (i * (photoHeight + photoGap));
+                    // Foto pertama dan kedua digeser lebih ke bawah dengan offset 30px
+                    const extraOffset = (i === 0 || i === 1) ? 30 : 0;
+                    const yPos = topMargin + extraOffset + (i * (photoHeight + photoGap));
                     ctx.drawImage(img, sideMargin, yPos, photoWidth, photoHeight);
                     loaded++;
                     
@@ -439,8 +534,6 @@
             }
         }
 
-        window.onload = fetchFrames;
-
         async function renderAdmin() {
             const { data } = await _supabase.from('vouchers').select('*').order('created_at', { ascending: false });
             if(data) {
@@ -456,6 +549,16 @@
             for(let i=0; i<5; i++) codes.push({ code: Math.random().toString(36).substring(2, 8).toUpperCase(), used: false });
             await _supabase.from('vouchers').insert(codes);
             renderAdmin();
+        }
+
+        window.onload = function() {
+            fetchFrames(); 
+            switchScreen('screen-welcome'); 
+        };
+
+        function startPhotoSession() {
+            switchScreen('screen-camera');
+            startCamera();
         }
     </script>
 </body>
