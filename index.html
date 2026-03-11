@@ -136,10 +136,8 @@
         <section id="screen-voucher" style="text-align: center;">
             <div style="font-size: 50px;">📸</div>
             <h1>SNAPMATICS</h1>
-            <p>Masukkan kode voucher untuk memulai sesi foto Anda.</p>
-            <input type="text" id="voucher-input" placeholder="MASUKKAN KODE" style="text-align:center; font-weight:700; text-transform:uppercase;">
-            <button class="main-btn" style="width:100%" onclick="validateVoucher()">MULAI FOTO</button>
-            <p id="voucher-msg" style="color:red; font-size:12px;"></p>
+            <p>Klik tombol di bawah untuk memulai sesi foto Anda.</p>
+            <button class="main-btn" style="width:100%" onclick="startPhotoSession()">MULAI FOTO</button>
         </section>
 
         <section id="screen-camera" class="hidden">
@@ -234,7 +232,7 @@
                 renderAdmin();
             } else { alert("PIN Salah!"); }
         }
-
+        
         async function fetchFrames() {
             try {
                 const { data } = await _supabase.from('frames').select('*').order('id', { ascending: false });
@@ -277,18 +275,11 @@
             fetchFrames(); renderAdmin();
         }
 
-        async function validateVoucher() {
-            const code = document.getElementById('voucher-input').value.toUpperCase();
-            if(!code) return;
-            const { data: v } = await _supabase.from('vouchers').select('*').eq('code', code).eq('used', false).single();
-            if(v) { 
-                activeVoucher = code; 
-                await fetchFrames(); 
-                switchScreen('screen-camera'); 
-                startCamera(); 
-            } else { 
-                document.getElementById('voucher-msg').innerText = "Voucher tidak valid atau sudah digunakan!"; 
-            }
+        function startPhotoSession() {
+            activeVoucher = 'GUEST_' + Date.now();
+            fetchFrames(); 
+            switchScreen('screen-camera'); 
+            startCamera(); 
         }
 
         function startCamera() {
@@ -392,8 +383,8 @@
             const photoWidth = 1000;
             const photoHeight = 750;
             const sideMargin = (canvas.width - photoWidth) / 2;
-            const topMargin = 150;    
-            const photoGap = 60;      
+            const topMargin = 110;
+            const photoGap = 50;
 
             let loaded = 0;
             photos.forEach((src, i) => {
@@ -448,6 +439,8 @@
             }
         }
 
+        window.onload = fetchFrames;
+
         async function renderAdmin() {
             const { data } = await _supabase.from('vouchers').select('*').order('created_at', { ascending: false });
             if(data) {
@@ -464,8 +457,6 @@
             await _supabase.from('vouchers').insert(codes);
             renderAdmin();
         }
-
-        window.onload = fetchFrames;
     </script>
 </body>
 </html>
